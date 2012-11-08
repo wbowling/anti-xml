@@ -1,6 +1,6 @@
 name := "anti-xml"
 
-organization := "com.codecommit"
+organization := "no.arktekk"
 
 version := "0.4-SNAPSHOT"
 
@@ -49,7 +49,7 @@ scalacOptions in Compile in doc <++= (unmanagedSourceDirectories in Compile) map
   val scalaSrc: File = (usd filter { _.toString endsWith "scala" }).head
   Seq(
     "-sourcepath", scalaSrc.toString,
-    "-doc-source-url", "https://github.com/hamnis/anti-xml/tree/master/src/main/scala€{FILE_PATH}.scala"
+    "-doc-source-url", "https://github.com/arktekk/anti-xml/tree/master/src/main/scala€{FILE_PATH}.scala"
   )
 }
 
@@ -75,4 +75,34 @@ publishTo <<= (version) apply { (v: String) =>
 
 credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
 
+//Maven central stuff
+homepage := Some(new URL("http://anti-xml.org"))
 
+startYear := Some(2011)
+
+licenses := Seq(("BSD", new URL("https://github.com/arktekk/anti-xml/blob/master/LICENSE.rst")))
+
+pomExtra <<= (pomExtra, name, description) {(pom, name, desc) => pom ++ xml.Group(
+      <scm>
+        <url>http://github.com/arktekk/anti-xml</url>
+        <connection>scm:git:git://github.com/arktekk/anti-xml.git</connection>
+        <developerConnection>scm:git:git@github.com:arktekk/anti-xml.git</developerConnection>
+      </scm>
+      <developers>
+        <developer>
+          <id>djspiewak</id>
+          <name>Daniel Spiewak</name>
+          <url>http://twitter.com/djspiewak</url>
+        </developer>
+      </developers>
+      <contributors>
+        <contributor>
+          <name>Erlend Hamnaberg</name>
+          <url>http://twitter.com/hamnis</url>
+        </contributor>
+         <contributor>
+          <name>Trygve Laugstøl</name>
+          <url>http://twitter.com/trygvis</url>
+        </contributor>
+      </contributors>
+    )}
