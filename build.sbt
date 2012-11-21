@@ -65,15 +65,17 @@ publishArtifact in (Compile, packageSrc) := true
 
 publishArtifact in (Test, packageSrc) := false
 
-publishTo <<= (version) apply { (v: String) => 
+publishTo <<= (version) apply { (v: String) =>
   if (v.trim().endsWith("SNAPSHOT")) {
-    Some("Sonatype Nexus Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots") 
+    Some("Sonatype Nexus Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots")
   } else {
     Some("Sonatype Nexus Staging" at "https://oss.sonatype.org/service/local/staging/deploy/maven2")
   }
 }
 
 credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
+
+seq(aetherPublishSettings: _*)
 
 //Maven central stuff
 homepage := Some(new URL("http://anti-xml.org"))
