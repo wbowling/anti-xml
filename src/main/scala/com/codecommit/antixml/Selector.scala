@@ -28,9 +28,6 @@
 
 package com.codecommit.antixml
 
-import scala.collection.Traversable
-import scala.collection.immutable.Seq
-
 trait Selector[+A] extends PartialFunction[Node, A]
 
 trait OptimizingSelector[+A] extends Selector[A] {
@@ -45,7 +42,7 @@ trait OptimizingSelector[+A] extends Selector[A] {
 object Selector {
 
   /**
-   * Implicitly lifts a [[scala.String]] into an instance of [[com.codecommit.antixml.Selector]]
+   * Implicitly lifts a [[java.lang.String]] into an instance of [[com.codecommit.antixml.Selector]]
    * which can then be passed to the appropriate methods on [[com.codecommit.antixml.Group]].
    * For example: `ns \ "name"`
    */
@@ -60,7 +57,33 @@ object Selector {
       def isDefinedAt(node: Node) = pf isDefinedAt node
       def canMatchIn(group: Group[Node]) = group.matches(hash)
     }
-  
+
+  implicit def namespaceBindingToSelector(nb: NamespaceBinding): Selector[Elem] =
+    new OptimizingSelector[Elem] {
+      private val pf: PartialFunction[Node, Elem] = {
+        case e @ Elem(NamespaceUri(uri), _, _, _, _) if nb.uri.filter(uri == _).isDefined => e
+      }
+
+      def apply(node: Node) = pf(node)
+      def isDefinedAt(node: Node) = pf isDefinedAt node
+      // TODO: I can't come up with a better implementation for now - Trygve
+      def canMatchIn(group: Group[Node]) = true
+    }
+
+  implicit def tupleToSelector[A <: NSRepr](t: (A, String)): Selector[Elem] =
+    new OptimizingSelector[Elem] {
+      val namespace = t._1.uri
+      val name = t._2
+      private val pf: PartialFunction[Node, Elem] = {
+        case e @ Elem(nb, `name`, _, _, _) if nb.uri.exists(namespace ==) =>
+          e
+      }
+      private val hash = Group.bloomFilterHash(name)
+
+      def apply(node: Node) = pf(node)
+      def isDefinedAt(node: Node) = pf isDefinedAt node
+      def canMatchIn(group: Group[Node]) = group.matches(hash)
+    }
 
   /**
    * Implicitly lifts a [[scala.Symbol]] into an instance of [[com.codecommit.antixml.Selector]]
@@ -71,7 +94,7 @@ object Selector {
     val Symbol(name) = sym
     stringToSelector(name)
   }
-  
+
   def apply[A](pf: PartialFunction[Node, A]) = {
     new Selector[A] {
       def apply(node: Node) = pf(node)

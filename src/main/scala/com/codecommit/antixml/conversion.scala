@@ -113,19 +113,30 @@ trait XMLConvertable[-A, +B] {      // note: doesn't extend Function1 to avoid c
  * Thus, the most specific conversion is chosen in all cases.
  */
 object XMLConvertable extends SecondPrecedenceConvertables {
+
+  def scope2stream(nb: xml.NamespaceBinding): Stream[xml.NamespaceBinding] = {
+    if(nb == null)
+      Stream.empty
+    else
+      Stream.cons(nb, scope2stream(nb.parent))
+  }
+
   implicit object ElemConvertable extends XMLConvertable[xml.Elem, Elem] {
     def apply(e: xml.Elem) = {
-      val prefix = if (e.prefix == null) None else Some(e.prefix)
-      val ns = if (e.namespace == null) None else Some(e.namespace)
-        
       val attrs = (Attributes() /: e.attributes) {
         case (attrs, pa: xml.PrefixedAttribute) => attrs + (QName(Some(pa.pre), pa.key) -> pa.value.mkString)
         case (attrs, ua: xml.UnprefixedAttribute) => attrs + (ua.key -> ua.value.mkString)
         case (attrs, _) => attrs
       }
-    
+
       val children = NodeSeqConvertable(xml.NodeSeq fromSeq e.child)
-      Elem(prefix, e.label, attrs, Map(), children)
+
+      val scopes = scope2stream(e.scope).toList.filter(x => x.prefix != null || x.uri != null)
+      val namespaceBindings = scopes.foldLeft(NamespaceBinding.empty)((parent, t) => if(t.prefix == null) parent.append(t.uri) else parent.append(t.prefix, t.uri))
+
+      val prefix = namespaceBindings.findByPrefix(if(e.prefix == null) "" else e.prefix).getOrElse(NamespaceBinding.empty)
+
+      Elem(prefix.looseParent, e.label, attrs, namespaceBindings, children)
     }
   }
   

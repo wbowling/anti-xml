@@ -78,38 +78,73 @@ class XMLSerializer(encoding: String, outputDeclaration: Boolean) {
   }
   
   def serialize(elem: Elem, w: Writer) {
-    var scopes: List[Map[String, String]] = Nil
+    /**
+     * A stack of prefix/uri declared on each element.
+     */
+    var namespaces: List[List[(String, String)]] = Nil
+
+    def namespaceDeclared(t: (String, String)) = {
+      namespaces.find(_.contains(t)).isDefined
+    }
+
+    /**
+     * A list of options. Each Some(uri) represents a change in the empty namespace.
+     */
+    var unprefixedUri: List[Option[String]] = Nil
 
     def doSerialize(node: Node, w: Writer) {
       node match {
         case Elem(prefix, name, attrs, scope, children) => {
-          val parentScope = scopes.headOption getOrElse Map()
-          scopes = scope :: scopes
+
+          val currentUnprefixedUri = unprefixedUri.find(_.isDefined).map(_.get).getOrElse("")
+
+          val (qname, xmlns): (String, String) = prefix match {
+            case EmptyNamespaceBinding =>
+              if (currentUnprefixedUri == "") {
+                unprefixedUri = None :: unprefixedUri
+                (name, "")
+              }
+              else {
+                unprefixedUri = Some("") :: unprefixedUri
+                (name, " xmlns=\"\"")
+              }
+            case UnprefixedNamespaceBinding(uri, _) =>
+              if (currentUnprefixedUri == uri) {
+                unprefixedUri = None :: unprefixedUri
+                (name, "")
+              }
+              else {
+                unprefixedUri = Some(uri) :: unprefixedUri
+                (name, " xmlns=\"" + uri + "\"")
+              }
+            case PrefixedNamespaceBinding(pfx, uri, _) =>
+              unprefixedUri = None :: unprefixedUri
+              val x: String = pfx + ":" + name
+              (x, "")
+          }
+
+          val newNamespaces = scope.toList.collect({
+            case p@PrefixedNamespaceBinding(pfx, uri, _) if !namespaceDeclared((pfx, uri)) => (pfx, uri)
+          })
+          
+          val prefixesStr = newNamespaces.foldLeft("")({(s, t) =>
+            s + " xmlns:" + t._1 + "=\"" + t._2 + "\""
+          })
+
+          namespaces = newNamespaces :: namespaces
+
           val attrStr = if (attrs.isEmpty) {
             ""
           } else {
             val delta = attrs map {
               case (key, value) => key.toString + "=" + Node.quoteAttribute(value)
             } mkString " "
-            
+
             " " + delta
           }
-            
-          val scopeChange = scope filter { case (key, value) => parentScope.get(key) != Some(value) }
-          val prefixesStr = if (scopeChange.isEmpty) { 
-            ""
-          } else {
-            val delta = scopeChange map {
-              case (key, value) =>
-                (if (key == "") "xmlns" else "xmlns:" + key) + "=" + Node.quoteAttribute(value)
-            } mkString " "
-            
-            " " + delta
-          }
-        
-          val qname = (prefix map { _ + ":" } getOrElse "") + name
-          val partial = "<" + qname + attrStr + prefixesStr
-          
+
+          val partial = "<" + qname + xmlns + prefixesStr + attrStr
+
           if (children.isEmpty) {
             w.append(partial)
             w.append("/>")
@@ -121,10 +156,11 @@ class XMLSerializer(encoding: String, outputDeclaration: Boolean) {
             w append(qname)
             w append('>')
           }
-          
-          scopes = scopes.tail
+
+          namespaces = namespaces.tail
+          unprefixedUri = unprefixedUri.tail
         }
-        
+
         case node => w.append(node.toString)
       }
     }

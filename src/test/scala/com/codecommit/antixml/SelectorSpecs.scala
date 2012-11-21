@@ -55,9 +55,15 @@ class SelectorSpecs extends Specification {
       <parent><foo/><bar/>Baz<foo/></parent>.convert \ 'foo mustEqual Group(<foo/>.convert, <foo/>.convert)
     }
   }
-  
-    
-  
+
+  "the namespace element selector" should {
+    "select only namespaced elements" in {
+      val ns = NSRepr("http://www.w3.org/2005/Atom")
+
+      <feed xmlns={ns.uri}><entry/><other xmlns="urn:a"/></feed>.convert \ (ns -> "entry") mustEqual Group(<entry xmlns={ns.uri}/>.convert)
+    }
+  }
+
   "Optimizing selectors" should {
     val bookstore = new StAXParser().fromString {
       "<bookstore>" +
@@ -95,8 +101,6 @@ class SelectorSpecs extends Specification {
       
       val result = bookstore \\ titlesOfBooksWithAuthors
       result mustEqual Vector("For Whom the Bell Tolls","I, Robot","Programming Scala")
-      
     }
   }
-  
 }
