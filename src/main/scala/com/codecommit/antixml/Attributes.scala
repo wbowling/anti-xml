@@ -32,6 +32,7 @@ import scala.collection.generic.CanBuildFrom
 import scala.collection.immutable.{Map, MapLike}
 import scala.collection.mutable.Builder
 import com.codecommit.antixml.util.OrderPreservingMap
+import collection.GenTraversableOnce
 
 /**
  * A special implementation of [[scala.collection.Map]]`[`[[com.codecommit.antixml.QName]]`, String]` with
@@ -122,7 +123,7 @@ class Attributes private (delegate: OrderPreservingMap[QName, String]) extends M
    *
    * @usecase def +(kv: (QName, String)): Attributes
    */
-  def +(kv: (QName, String))(implicit d: DummyImplicit) = new Attributes(delegate + kv)
+  def +(kv: (QName, String))(implicit d: DummyImplicit): Attributes = new Attributes(delegate + kv)
   
   // totally shadowed by the overload; compiler won't even touch it without ascribing a supertype
   override def + [B >: String] (kv1: (QName, B), kv2: (QName, B), kvs: (QName, B) *): Map[QName, B] = delegate + (kv1, kv2, kvs:_*)
@@ -135,9 +136,20 @@ class Attributes private (delegate: OrderPreservingMap[QName, String]) extends M
    *
    * @usecase def +(kv1: (QName, String), kv2: (QName, String), kvs: (QName, String) *): Attributes
    */
-  def +(kv1: (QName, String), kv2: (QName, String), kvs: (QName, String) *)(implicit d: DummyImplicit) = new Attributes(delegate + (kv1,kv2,kvs:_*))
-  
-  
+  def +(kv1: (QName, String), kv2: (QName, String), kvs: (QName, String) *)(implicit d: DummyImplicit): Attributes = new Attributes(delegate + (kv1,kv2,kvs:_*))
+
+  // totally shadowed by the overload; compiler won't even touch it without ascribing a supertype
+  override def ++[B1 >: String](xs: GenTraversableOnce[(QName, B1)]) = delegate ++ xs
+
+  /**
+   * Special overload of the `++` method to return `Attributes` rather than
+   * `Map[QName, String]`.
+   *
+   * See the corresponding override of single-argument `++` for more details.
+   *
+   */
+  def ++(xs: GenTraversableOnce[(QName, String)])(implicit d: DummyImplicit) = new Attributes(delegate ++ xs)
+
   // totally shadowed by the overload; compiler won't even touch it without ascribing a supertype
   override def updated [B >: String](key: QName, value: B): Map[QName, B] = this + ((key, value))
 

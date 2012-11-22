@@ -30,6 +30,7 @@ package com.codecommit.antixml.util
 
 import scala.collection.immutable.{Map, MapLike}
 import scala.collection.generic.{ImmutableMapFactory, CanBuildFrom}
+import collection.GenTraversableOnce
 
 /**
  * An immutable `Map` specialization that guarantees its iteration order.
@@ -57,6 +58,10 @@ private[antixml] trait OrderPreservingMap[A,+B] extends Map[A,B] with MapLike[A,
   
   override def + [B1 >: B] (kv1: (A, B1), kv2: (A, B1), kvs: (A, B1) *): OrderPreservingMap[A, B1] =
     self + kv1 + kv2 ++ kvs
+
+  override def ++[B1 >: B](xs: GenTraversableOnce[(A, B1)]):OrderPreservingMap[A, B1] = {
+    ((repr: OrderPreservingMap[A, B1]) /: xs.seq) (_ + _)
+  }
 
   override def updated [B1 >: B] (key: A, value: B1): OrderPreservingMap[A, B1] = self + ((key,value))
 
