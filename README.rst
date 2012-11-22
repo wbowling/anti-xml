@@ -3,6 +3,14 @@ Anti-XML: The Non-Violent Solution
 ==================================
 
 **Documentation and usage can be found at http://anti-xml.org**
+** Outdated **
+
+This is a forked version of Anti-XML with improved namespace support.
+All credit goes to Daniel Spiewak for a great library, and
+Trygve Laugstøl for great work for namespace support.
+
+NOTE: the API may still change, but most things should now be backward
+compatible from the 0.5 release.
 
 Anti-XML is a proposed replacement for the ``scala.xml`` package in
 the Scala standard library. The standard package is outdated and
@@ -42,27 +50,27 @@ Usage
 =====
 
 The Maven artifact descriptor for the latest *stable* version of
-Anti-XML is as follows: ``net.hamnaberg:anti-xml_2.9.1:0.3``.  We also regularly
+Anti-XML is as follows: ``no.arktekk:anti-xml_2.9.1:0.5``.  We also regularly
 push ``-SNAPSHOT`` releases to the Sonatype_ "snapshots" repository, for all
 five of you who like to live dangerously.  You should be able to use this
 descriptor to easily add Anti-XML as a dependency to any project with a
 Maven-compatible build system (Maven, Buildr, SBT, Gradle, Ivy, etc). The stable
-artifacts themselves are hosted in the Scala-Tools_ "releases" repository.  For
+artifacts themselves are hosted in the Maven Central repository.  For
 reference, here are a few copy/paste snippets you can use for some of the common
 build systems.
 
 **SBT**::
   
-    val antiXML = "net.hamnaberg" %% "anti-xml" % "0.5"
+    val antiXML = "no.arktekk" %% "anti-xml" % "0.5"
   
 **Buildr**::
   
-    compile.with "net.hamnaberg:anti-xml_#{Scala.version}:jar:0.5"
+    compile.with "no.arktekk:anti-xml_#{Scala.version}:jar:0.5"
   
 **Maven2**::
   
     <dependency>
-      <groupId>net.hamnaberg</groupId>
+      <groupId>no.arktekk</groupId>
       <artifactId>anti-xml_2.9.1</artifactId>
       <version>0.5</version>
     </dependency>
