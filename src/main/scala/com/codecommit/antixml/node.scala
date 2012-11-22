@@ -137,15 +137,13 @@ case class ProcInstr(target: String, data: String) extends Node {
  * This would result in the following node:
  *
  * {{{
- * Elem(None, "span", Attributes("id" -> "foo", "class" -> "bar"), Map(), Group(Text("Lorem ipsum")))
+ * Elem("span", attrs = Attributes("id" -> "foo", "class" -> "bar"), children = Group(Text("Lorem ipsum")))
  * }}}
- *
- * TODO: Clean up naming. Options:
- * 1) Rename prefix to namespace, scope to namespaces
- * 2) Remove prefix, rename scope to namespace(s), assume that the first is the name of the current element
+ * TODO: Consider making Elem not a case class and handle thing a different way.
  */
 case class Elem(name: QName, attrs: Attributes = Attributes(), namespaces: NamespaceBinding = NamespaceBinding.empty, override val children: Group[Node] = Group.empty) extends Node with Selectable[Elem] {
-  //Elem.validateAttributes(attrs, namespaces.toList)
+  //TODO: adding the empty namespacebinding is a hack because we cannot know which ns the attributes are supposed to be ahead of time.
+  Elem.validateAttributes(attrs, EmptyNamespaceBinding :: name.namespace :: namespaces.toList)
 
   /**
    * See the `canonicalize` method on [[com.codecommit.antixml.Group]].
@@ -172,6 +170,8 @@ case class Elem(name: QName, attrs: Attributes = Attributes(), namespaces: Names
 
   def withAttributes(attrs: Seq[(QName, String)]) = copy(attrs = this.attrs ++ attrs)
 
+  def withAttributes(attrs: Attributes) = copy(attrs = this.attrs ++ attrs)
+
   def getAttribute(name: QName) = attrs.get(name)
 
   /**
@@ -192,7 +192,9 @@ case class Elem(name: QName, attrs: Attributes = Attributes(), namespaces: Names
   /**
    * Adds a namespace with a given prefix
    */
-  //def addNamespace(prefix: String, namespace: String) = addNamespaces(Map(prefix.trim() -> namespace.trim())) 
+  def addNamespace(prefix: String, uri: String) = addNamespaces(Map(prefix -> uri))
+
+  def addNamespace(uri: String) = copy(namespaces = namespaces.append(uri))
 
   /**
    * Adds the Map of prefix -> namespace to the scope. 
@@ -201,36 +203,36 @@ case class Elem(name: QName, attrs: Attributes = Attributes(), namespaces: Names
    * (It is allowed by the XML spec, but kind of pointless in practice)
    * 
    */
-  /*def addNamespaces(namespaces: Map[String, String]) = {
+  def addNamespaces(namespaces: Map[String, String]) = {
     if (namespaces.isEmpty) this
     else {
       def nextValidPrefix = {
         var i = 1
-        while (scope.contains("ns" + i)) {
+        while (this.namespaces.findByPrefix("ns" + i).isDefined) {
           i = i + 1
         }
         "ns" + i
       }
-      def mapit(namespaces: Map[String, String], tuple: (String, String)) = tuple match {
-        case (x, y) if (namespaces.find{case (_, z) => z == y}.isDefined) => namespaces
-        case ("", y) if (namespaces.get("").isEmpty) => namespaces + ("" -> y) //if the empty namespace has not been defined already
-        case ("", y) => {
+      def mapit(binding: NamespaceBinding, tuple: (String, String)) = tuple match {
+        case (_, uri) if (binding.findByUri(uri).isDefined) => binding
+        case ("", uri) if (binding.findByPrefix("").isEmpty) => binding.append(uri) //if the empty namespace has not been defined already
+        case ("", uri) => {
           val p = nextValidPrefix
-          namespaces + (p -> y)
+          binding.append(p, uri)
         }
-        case (x, y) => namespaces + (x -> y)
+        case (prefix, uri) => binding.append(prefix,uri)
       }
       
-      val currentNS = namespaces.foldLeft(scope){case (ns, tuple) => mapit(ns, tuple)}
-      if (currentNS == scope) this else copy(scope = currentNS)
+      val binding = namespaces.foldLeft(this.namespaces){case (ns, tuple) => mapit(ns, tuple)}
+      if (binding == this.namespaces) this else copy(namespaces = binding)
     }
-  }*/
+  }
 }
 
-object Elem extends ((QName, Attributes, NamespaceBinding, Group[Node]) => Elem) {
+object Elem {
   private[this] val NameRegex = {
     val nameStartChar = """:A-Z_a-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD"""
-    "[" + nameStartChar + "][" + nameStartChar + """\-\.0-9\u00B7\u0300-\u036F\u203F-\u2040]*"""r
+    ("[" + nameStartChar + "][" + nameStartChar + """\-\.0-9\u00B7\u0300-\u036F\u203F-\u2040]*""").r
   }
 
   def apply(name: QName):Elem = apply(name, Attributes(), NamespaceBinding.empty, Group.empty)
@@ -239,7 +241,7 @@ object Elem extends ((QName, Attributes, NamespaceBinding, Group[Node]) => Elem)
   def isValidNamespaceUri(uri: String) = uri.trim().length() > 0
 
   def validateAttributes(attrs: Attributes, namespaces: List[NamespaceBinding]) {
-    attrs.keys.foreach(name => if (!namespaces.contains(name)) throw new IllegalArgumentException("Attribute with name %s in %s namespace is not defined on element".format(name.name, name.namespace)))
+    attrs.keys.foreach(name => if (!namespaces.contains(name.namespace)) throw new IllegalArgumentException("Attribute with name '%s' in '%s' namespace is not defined on element".format(name.name, name.namespace.uri.getOrElse(""))))
   }
 }
 
@@ -283,10 +285,10 @@ sealed trait NamespaceBinding {
   /**
    * This is probably not a good idea.
    */
-  def looseParent: NamespaceBinding
+  private[antixml] def looseParent: NamespaceBinding
 
   def toList: List[NamespaceBinding] = {
-    def toStream(nb: NamespaceBinding): Stream[NamespaceBinding] = Stream.cons(nb, if(nb.parent.isDefined) toStream(nb.parent.get) else Stream.empty)
+    def toStream(nb: NamespaceBinding): Stream[NamespaceBinding] = Stream.cons(nb.looseParent, if(nb.parent.isDefined) toStream(nb.parent.get) else Stream.empty)
     toStream(this).toList
   }
 }
@@ -318,7 +320,7 @@ object NSRepr {
   def apply(nb: NamespaceBinding): NSRepr = new NSRepr(nb.uri.getOrElse(throw new IllegalArgumentException("A namespace binding has to have an URI")))
 }
 
-private [antixml] object EmptyNamespaceBinding extends NamespaceBinding {
+private [antixml]case object EmptyNamespaceBinding extends NamespaceBinding {
   def uri = None
   def parent = None
   def isEmpty = true
@@ -327,7 +329,7 @@ private [antixml] object EmptyNamespaceBinding extends NamespaceBinding {
 
   override def append(prefix: String, uri: String): NamespaceBinding = new PrefixedNamespaceBinding(prefix, uri, None)
 
-  def looseParent = this
+  private[antixml] def looseParent = this
 
   override def toList = List.empty
 }
@@ -342,7 +344,7 @@ case class PrefixedNamespaceBinding(prefix: String, _uri: String,  override val 
 
   def uri = Some(_uri)
   def isEmpty = false
-  def looseParent = PrefixedNamespaceBinding(prefix, _uri, None)
+  private[antixml] def looseParent = PrefixedNamespaceBinding(prefix, _uri, None)
 }
 
 case class UnprefixedNamespaceBinding(_uri: String,  override val parent: Option[NamespaceBinding] = None) extends NamespaceBinding {
@@ -352,7 +354,7 @@ case class UnprefixedNamespaceBinding(_uri: String,  override val parent: Option
 
   def uri = Some(_uri)
   def isEmpty = false
-  def looseParent = UnprefixedNamespaceBinding(_uri, None)
+  private[antixml] def looseParent = UnprefixedNamespaceBinding(_uri, None)
 }
 
 /**

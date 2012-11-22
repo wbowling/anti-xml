@@ -119,21 +119,21 @@ class NodeSpecs extends Specification with DataTables with ScalaCheck with XMLGe
       withChildren.children must beEmpty
     }
 
-    /*"add namespace conveniently" in {
-      val elem = Elem(None, "foo", Attributes(), Map("" -> "urn:foo:bar"), Group(Text("Somewhat crazy")))
+    "add namespace conveniently" in {
+      val elem = Elem("foo", Attributes(), NamespaceBinding("urn:foo:bar"), Group(Text("Somewhat crazy")))
       val withChildren = elem.addNamespace("bar", "urn:foo:baz")
-      withChildren.scope must beEqualTo(Map("" -> "urn:foo:bar", "bar" -> "urn:foo:baz"))
+      withChildren.namespaces.toList must beEqualTo(List(NamespaceBinding("bar", "urn:foo:baz"), NamespaceBinding("urn:foo:bar")))
     }
 
     "generate namespace" in {
-      val elem = Elem(None, "foo", Attributes(), Map("" -> "urn:foo:bar"), Group(Text("Somewhat crazy")))
+      val elem = Elem("foo", Attributes(), NamespaceBinding("urn:foo:bar"), Group(Text("Somewhat crazy")))
       val withChildren = elem.addNamespace("", "urn:foo:baz")
-      withChildren.scope must beEqualTo(Map("" -> "urn:foo:bar", "ns1" -> "urn:foo:baz"))
-    }*/
+      withChildren.namespaces.toList must beEqualTo(List(NamespaceBinding("ns1", "urn:foo:baz"), NamespaceBinding("urn:foo:bar")))
+    }
 
     "detect illegal attribute prefixes" in check { str: String =>
       name unapplySeq str match {
-        case Some(_) => Elem(QName(NamespaceBinding.empty, "foo"), Attributes(QName(PrefixedNamespaceBinding(str, "urn:bar"), "bar") -> "bar"), NamespaceBinding.empty, Group()) must not(throwAn[IllegalArgumentException])
+        case Some(_) => Elem(QName(NamespaceBinding.empty, "foo"), Attributes(QName(PrefixedNamespaceBinding(str, "urn:bar"), "bar") -> "bar"), PrefixedNamespaceBinding(str, "urn:bar"), Group()) must not(throwAn[IllegalArgumentException])
         case None => Elem(QName(NamespaceBinding.empty, "foo"), Attributes(QName(PrefixedNamespaceBinding(str, "urn:bar"), "bar") -> "bar"), NamespaceBinding.empty, Group()) must throwAn[IllegalArgumentException]
       }
     }
