@@ -106,8 +106,13 @@ class NodeSeqSAXHandler extends DefaultHandler2 {
       val localName = attrs.getLocalName(i)
 
       val prefix = {
-        val back = attrs.getQName(i)
-        if (back == localName) None else Some(back.substring(0, back.length - localName.length -1))
+        val qname = attrs.getQName(i)
+        if (qname == localName) {
+          NamespaceBinding.empty
+        } else {
+          scopes.findByPrefix(qname.substring(0, qname.length - localName.length -1)).getOrElse(NamespaceBinding.empty)
+        }
+
       }
     
       map + (QName(prefix, localName) -> attrs.getValue(i))
@@ -122,7 +127,7 @@ class NodeSeqSAXHandler extends DefaultHandler2 {
       else
         PrefixedNamespaceBinding(qName.substring(0, qName.length - localName.length - 1), uri)
 
-      Elem(prefix, localName, map, scopes, children)
+      Elem(QName(prefix, localName), map, scopes, children)
     }
   }
 

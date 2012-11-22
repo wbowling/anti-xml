@@ -311,7 +311,7 @@ class ZipperSpecs extends SpecificationWithJUnit with ScalaCheck  with XMLGenera
     "rebuild after a flatMap at the first level" in {
       val books = bookstore \ "book"
       val books2 = books flatMap { 
-        case e @ Elem(_, _, _, _, children) if children.length > 2 =>
+        case e: Elem if e.children.length > 2 =>
           List(e.copy(attrs=Attributes("updated" -> "yes")), e.copy(attrs=Attributes("updated" -> "yes")))
         
         case _ => Nil
@@ -333,7 +333,7 @@ class ZipperSpecs extends SpecificationWithJUnit with ScalaCheck  with XMLGenera
         bookElem <- bookstore \ "book"
         title <- bookElem \ "title" \ text
         if !title.trim.isEmpty
-        val filteredChildren = bookElem.children filter { case Elem(NamespaceBinding.empty, "title", _, _, _) => false case _ => true }
+        val filteredChildren = bookElem.children filter { case Elem(QName(NamespaceBinding.empty, "title"), _, _, _) => false case _ => true }
       } yield bookElem.copy(attrs=(bookElem.attrs + ("title" -> title)), children=filteredChildren)
       
       val bookstore2 = titledBooks.unselect
@@ -376,7 +376,7 @@ class ZipperSpecs extends SpecificationWithJUnit with ScalaCheck  with XMLGenera
       val bookstore2 = (books filter (books(1) !=)).unselect
       
       bookstore2.head must beLike {
-        case Elem(NamespaceBinding.empty, "bookstore", attrs, scopes, children) if attrs.isEmpty && scopes.isEmpty => {
+        case Elem(QName(NamespaceBinding.empty, "bookstore"), attrs, scopes, children) if attrs.isEmpty && scopes.isEmpty => {
           children must haveSize(2)
           children \ 'title \ text mustEqual Vector("For Whom the Bell Tolls", "Programming Scala")
         }
@@ -388,7 +388,7 @@ class ZipperSpecs extends SpecificationWithJUnit with ScalaCheck  with XMLGenera
       val bookstore2 = (books filter (books(0) !=) filter (books(1) !=)).unselect
       
       bookstore2.head must beLike {
-        case Elem(NamespaceBinding.empty, "bookstore", attrs, scopes, children) if attrs.isEmpty && scopes.isEmpty => {
+        case Elem(QName(NamespaceBinding.empty, "bookstore"), attrs, scopes, children) if attrs.isEmpty && scopes.isEmpty => {
           children must haveSize(1)
           children \ 'title \ text mustEqual Vector("Programming Scala")
         }
@@ -410,7 +410,7 @@ class ZipperSpecs extends SpecificationWithJUnit with ScalaCheck  with XMLGenera
       val bookstore2 = (titles filter (titles(1) !=)).unselect.unselect
       
       bookstore2.head must beLike {
-        case Elem(NamespaceBinding.empty, "bookstore", attrs, scopes, children) if attrs.isEmpty && scopes.isEmpty =>
+        case Elem(QName(NamespaceBinding.empty, "bookstore"), attrs, scopes, children) if attrs.isEmpty && scopes.isEmpty =>
           children must haveSize(3)
       }
       
@@ -424,7 +424,7 @@ class ZipperSpecs extends SpecificationWithJUnit with ScalaCheck  with XMLGenera
       val bookstore2 = (books filter (books(1) !=) filter (books(0) !=)).unselect
       
       bookstore2.head must beLike {
-        case Elem(NamespaceBinding.empty, "bookstore", attrs, scopes, children) if attrs.isEmpty && scopes.isEmpty => {
+        case Elem(QName(NamespaceBinding.empty, "bookstore"), attrs, scopes, children) if attrs.isEmpty && scopes.isEmpty => {
           children must haveSize(1)
           children \ 'title \ text mustEqual Vector("Programming Scala")
         }
@@ -434,7 +434,7 @@ class ZipperSpecs extends SpecificationWithJUnit with ScalaCheck  with XMLGenera
     "preserve flatMap order" in {
       val original = <top><a/></top>.convert
       val expanded = (original \ 'a) flatMap {
-        case e: Elem => for (i <- 0 until 10) yield e.copy(name = e.name + i)
+        case e: Elem => for (i <- 0 until 10) yield rewriteName(e, _ + i)
       }
       val modified = expanded.unselect
 
@@ -611,7 +611,7 @@ class ZipperSpecs extends SpecificationWithJUnit with ScalaCheck  with XMLGenera
     }
     
     "support map" in {
-      val elems = (bookstore \\ anyElem).withFilter(e => e.name != "book").map({e => e.copy(name=e.name.toUpperCase)})
+      val elems = (bookstore \\ anyElem).withFilter(e => e.name != "book").map(e => rewriteName(e, _.toUpperCase))
       elems.foreach { e =>
         e.name must beOneOf("TITLE", "AUTHOR")
       }
@@ -621,7 +621,7 @@ class ZipperSpecs extends SpecificationWithJUnit with ScalaCheck  with XMLGenera
     "support map with multiple filters" in {
       val elems = (bookstore \\ anyElem).withFilter(e => e.name != "book")
           .withFilter(e => e.name != "title")
-          .map({e => e.copy(name=e.name.toUpperCase)})
+          .map(e => rewriteName(e, _.toUpperCase))
       elems.foreach { e =>
         e.name mustEqual("AUTHOR")
       }
@@ -650,7 +650,7 @@ class ZipperSpecs extends SpecificationWithJUnit with ScalaCheck  with XMLGenera
     }
 
     "preserve zipper context after map" in {
-      val elems = (bookstore \\ anyElem).withFilter(e => e.name != "author").map({e => e.copy(name=e.name.toUpperCase)})
+      val elems = (bookstore \\ anyElem).withFilter(e => e.name.name != "author").map(e => rewriteName(e, _.toUpperCase))
       val result = elems.unselect
       (result \ 'BOOK).length mustEqual 3
       (result \ 'book).length mustEqual 0
@@ -676,7 +676,7 @@ class ZipperSpecs extends SpecificationWithJUnit with ScalaCheck  with XMLGenera
       val zipper = xml select *
       def f(n: Node, i: Int): Option[Seq[Node]] = n match {
         case n if (i & 1) == 0 => None
-        case e: Elem => Some(Seq(e.copy(name=e.name.toUpperCase)))
+        case e: Elem => Some(Seq(rewriteName(e, _.toUpperCase)))
         case n => None
       }
       val cfmwi = zipper.conditionalFlatMapWithIndex(f)
@@ -692,7 +692,7 @@ class ZipperSpecs extends SpecificationWithJUnit with ScalaCheck  with XMLGenera
       def f(n: Node, i: Int): Option[Seq[Node]] = n match {
         case n if (i & 1) == 0 => None
         case _ if (i & 2) == 0 => Some(Seq())
-        case e: Elem => Some(Seq(e.copy(name=e.name+"MODIFIED"), e, e))
+        case e: Elem => Some(Seq(rewriteName(e, _ + "MODIFIED"), e, e))
         case n => Some(Seq(n, n, n))
       }
       val zipper = xml select *
@@ -857,7 +857,6 @@ class ZipperSpecs extends SpecificationWithJUnit with ScalaCheck  with XMLGenera
       z3.unselect mustEqual <top><a><c /></a></top>.convert.toGroup
     }
   }
-  
   "Zipper.slice" should {
     val texts = Group.fromSeq(for (i <- 0 until 100) yield Text(i.toString))
     val elems = for(t <- texts) yield elem("Text"+t.text,t)
@@ -954,7 +953,10 @@ class ZipperSpecs extends SpecificationWithJUnit with ScalaCheck  with XMLGenera
     }
   }
   
-  
+  def rewriteName(e: Elem, f: String => String): Elem = {
+    e.copy(name = e.name.copy(name = f(e.name.name)))
+  }
+
   def validate[Expected] = new {
     def apply[A](a: A)(implicit evidence: A =:= Expected) = evidence must not beNull
   }
@@ -962,8 +964,8 @@ class ZipperSpecs extends SpecificationWithJUnit with ScalaCheck  with XMLGenera
   def resource(filename: String) =
     XML fromSource (Source fromURL (getClass getResource ("/" + filename)))
 
-  def elem(name: String) = Elem(NamespaceBinding.empty, name, Attributes(), NamespaceBinding.empty, Group())
-  def elem(name: String, children: Node*) = Elem(NamespaceBinding.empty, name, Attributes(), NamespaceBinding.empty, Group(children: _*))
+  def elem(name: String) = Elem(QName(NamespaceBinding.empty, name), Attributes(), NamespaceBinding.empty, Group())
+  def elem(name: String, children: Node*) = Elem(QName(NamespaceBinding.empty, name), Attributes(), NamespaceBinding.empty, Group(children: _*))
   
   def textNode(s: scala.util.matching.Regex) = Selector[Text]({
     case t: Text if s.pattern.matcher(t.text).matches() => t

@@ -116,7 +116,7 @@ class StAXParser extends XMLParser {
             text.clear()
           }
 
-          ancestors.head += Elem(p, elem.name, elem.attrs, elem.namespaces, Group fromSeq children.result)
+          ancestors.head += Elem(QName(p, elem.name), elem.attrs, elem.namespaces, Group fromSeq children.result)
           elems = parents
           results = ancestors
         }
@@ -165,9 +165,16 @@ class StAXParser extends XMLParser {
           var attrs = Attributes()
           while (i < xmlReader.getAttributeCount) {
             val localName = xmlReader.getAttributeLocalName(i)
+            val ns = xmlReader.getAttributeNamespace(i)
             val prefix = {
               val back = xmlReader.getAttributePrefix(i)
-              if (back == null || back == "") None else Some(back)
+              if (isBlank(back) && isBlank(ns)) {
+                NamespaceBinding.empty
+              } else if (isBlank(back)) {
+                UnprefixedNamespaceBinding(ns)
+              } else {
+                PrefixedNamespaceBinding(back, ns)
+              }
             }
             attrs = attrs + (QName(prefix, localName) -> xmlReader.getAttributeValue(i))
             i = i + 1
@@ -189,5 +196,9 @@ class StAXParser extends XMLParser {
       }
     }
     results.head.result().head.asInstanceOf[Elem]
+  }
+
+  def isBlank(back: String): Boolean = {
+    back == null || back.trim == ""
   }
 }

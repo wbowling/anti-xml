@@ -28,22 +28,21 @@
 
 package com.codecommit.antixml
 
-case class QName(prefix: Option[String], name: String) {
-  import Elem.isValidName
-  
-  for (p <- prefix) {
-    if (! isValidName(p)) {
-      throw new IllegalArgumentException("Illegal element prefix, '" + p + "'")
-    }
-  }
-  
-  if (! isValidName(name)) {
+case class QName(namespace: NamespaceBinding, name: String) {
+  if (! Elem.isValidName(name)) {
     throw new IllegalArgumentException("Illegal attribute name, '" + name + "'")
   }
   
-  override def toString = (prefix map { _.toString + ':' } getOrElse "") + name
+  //override def toString = (namespace map { _.toString + ':' } getOrElse "") + name
+  private[antixml] def nameForAttribute = {
+    val prefix = namespace match {
+      case (_: EmptyNamespaceBinding.type | _: UnprefixedNamespaceBinding) => ""
+      case PrefixedNamespaceBinding(pfx, _, _) => pfx + ":"
+    }
+    prefix + name
+  }
 }
 
-object QName extends ((Option[String], String) => QName) {
-  implicit def stringToQName(str: String) = QName(None, str)
+object QName extends ((NamespaceBinding, String) => QName) {
+  implicit def stringToQName(str: String) = QName(NamespaceBinding.empty, str)
 }

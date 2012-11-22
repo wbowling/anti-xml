@@ -144,11 +144,9 @@ case class ProcInstr(target: String, data: String) extends Node {
  * 1) Rename prefix to namespace, scope to namespaces
  * 2) Remove prefix, rename scope to namespace(s), assume that the first is the name of the current element
  */
-case class Elem(prefix: NamespaceBinding, name: String, attrs: Attributes, scope: NamespaceBinding, override val children: Group[Node]) extends Node with Selectable[Elem] {
-  if (!Elem.isValidName(name)) {
-    throw new IllegalArgumentException("Illegal element name, '" + name + "'")
-  }
-  
+case class Elem(name: QName, attrs: Attributes, namespaces: NamespaceBinding, override val children: Group[Node]) extends Node with Selectable[Elem] {
+  Elem.validateAttributes(attrs, namespaces.toList)
+
   /**
    * See the `canonicalize` method on [[com.codecommit.antixml.Group]].
    */
@@ -221,13 +219,20 @@ case class Elem(prefix: NamespaceBinding, name: String, attrs: Attributes, scope
   }*/
 }
 
-object Elem extends ((NamespaceBinding, String, Attributes, NamespaceBinding, Group[Node]) => Elem) {
+object Elem extends ((QName, Attributes, NamespaceBinding, Group[Node]) => Elem) {
   private[this] val NameRegex = {
     val nameStartChar = """:A-Z_a-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD"""
     "[" + nameStartChar + "][" + nameStartChar + """\-\.0-9\u00B7\u0300-\u036F\u203F-\u2040]*"""r
   }
+
+  def apply(name: QName):Elem = apply(name, Attributes(), NamespaceBinding.empty, Group.empty)
+
   def isValidName(string: String) = NameRegex.pattern.matcher(string).matches
   def isValidNamespaceUri(uri: String) = uri.trim().length() > 0
+
+  def validateAttributes(attrs: Attributes, namespaces: List[NamespaceBinding]) {
+    attrs.keys.foreach(name => if (!namespaces.contains(name)) throw new IllegalArgumentException("Attribute with name %s in %s namespace is not defined on element".format(name.name, name.namespace)))
+  }
 }
 
 /*

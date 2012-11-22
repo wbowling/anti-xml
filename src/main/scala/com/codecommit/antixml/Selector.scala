@@ -49,7 +49,7 @@ object Selector {
   implicit def stringToSelector(name: String): Selector[Elem] =
     new OptimizingSelector[Elem] {
       private val pf: PartialFunction[Node, Elem] = {
-        case e @ Elem(_, `name`, _, _, _) => e
+        case e @ Elem(QName(_, `name`), _, _, _) => e
       }
       private val hash = Group.bloomFilterHash(name)
 
@@ -61,7 +61,7 @@ object Selector {
   implicit def namespaceBindingToSelector(nb: NamespaceBinding): Selector[Elem] =
     new OptimizingSelector[Elem] {
       private val pf: PartialFunction[Node, Elem] = {
-        case e @ Elem(NamespaceUri(uri), _, _, _, _) if nb.uri.filter(uri == _).isDefined => e
+        case e @ Elem(QName(NamespaceUri(uri),_), _, _, _) if nb.uri.filter(uri == _).isDefined => e
       }
 
       def apply(node: Node) = pf(node)
@@ -75,7 +75,7 @@ object Selector {
       val namespace = t._1.uri
       val name = t._2
       private val pf: PartialFunction[Node, Elem] = {
-        case e @ Elem(nb, `name`, _, _, _) if nb.uri.exists(namespace ==) =>
+        case e @ Elem(QName(nb, `name`), _, _, _) if nb.uri.exists(namespace ==) =>
           e
       }
       private val hash = Group.bloomFilterHash(name)

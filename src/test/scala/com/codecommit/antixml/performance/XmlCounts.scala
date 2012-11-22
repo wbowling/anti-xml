@@ -45,7 +45,7 @@ object XmlCounts {
   }
   private def count(n: Node): XmlCounts = {
     val top = n match {
-      case Elem(_,_,a,_,_) => XmlCounts(1,1,a.size)
+      case Elem(_,a,_,_) => XmlCounts(1,1,a.size)
       case _ => XmlCounts(1,0,0)
     }
     (top /: n.children) { (acc,child) => acc + count(child) }

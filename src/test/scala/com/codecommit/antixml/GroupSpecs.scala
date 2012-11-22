@@ -212,7 +212,7 @@ class GroupSpecs extends Specification with ScalaCheck with XMLGenerators with U
     "map with non-Node result should produce an IndexedSeq" in {
       val group = Group(<parent>child</parent>.convert)
       val res = group map { _.name }
-      validate[scala.collection.immutable.IndexedSeq[String]](res)
+      validate[scala.collection.immutable.IndexedSeq[QName]](res)
       res mustEqual Vector("parent")
     }
     
@@ -238,7 +238,7 @@ class GroupSpecs extends Specification with ScalaCheck with XMLGenerators with U
     "work with simple replacements" in check { (xml: Group[Node]) =>
       def f(n: Node, i: Int): Option[Seq[Node]] = n match {
         case n if (i & 1) == 0 => None
-        case e: Elem => Some(Seq(e.copy(name=e.name.toUpperCase)))
+        case e: Elem => Some(Seq(e.copy(name=e.name.copy(name = e.name.name.toUpperCase))))
         case n => None
       }
       val cfmwi = xml.conditionalFlatMapWithIndex(f)
@@ -254,7 +254,7 @@ class GroupSpecs extends Specification with ScalaCheck with XMLGenerators with U
       def f(n: Node, i: Int): Option[Seq[Node]] = n match {
         case n if (i & 1) == 0 => None
         case _ if (i & 2) == 0 => Some(Seq())
-        case e: Elem => Some(Seq(e.copy(name=e.name+"MODIFIED"), e, e))
+        case e: Elem => Some(Seq(e.copy(name=QName(e.name.namespace, e.name.name+"MODIFIED")), e, e))
         case n => Some(Seq(n, n, n))
       }
       val cfmwi = xml.conditionalFlatMapWithIndex(f)
@@ -339,9 +339,9 @@ class GroupSpecs extends Specification with ScalaCheck with XMLGenerators with U
     def apply[A](a: A)(implicit evidence: A =:= Expected) = evidence must not beNull
   }
 
-  def elem(name: String, children: Node*) = Elem(NamespaceBinding.empty, name, Attributes(), NamespaceBinding.empty, Group(children: _*))
+  def elem(name: String, children: Node*) = Elem(QName(NamespaceBinding.empty, name), Attributes(), NamespaceBinding.empty, Group(children: _*))
 
-  def elem(qname : QName, children: Node*) = Elem(qname match { case QName(Some(prefix), ns) => PrefixedNamespaceBinding(prefix, ns) case QName(None, ns) => UnprefixedNamespaceBinding(ns)}, qname.name, Attributes(), NamespaceBinding.empty, Group(children: _*))
+  def elem(qname : QName, children: Node*) = Elem(qname, Attributes(), NamespaceBinding.empty, Group(children: _*))
   
   val anyElem: Selector[Elem] = Selector {case e: Elem => e}
 }

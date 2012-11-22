@@ -61,7 +61,7 @@ package object antixml {
   // I feel justified in this global implicit since it doesn't pimp anything
   implicit def stringTupleToQNameTuple(pair: (String, String)): (QName, String) = {
     val (key, value) = pair
-    (QName(None, key), value)
+    (QName(NamespaceBinding.empty, key), value)
   }
 
   implicit def stringToNsRepr(s: String) = NSRepr(s)

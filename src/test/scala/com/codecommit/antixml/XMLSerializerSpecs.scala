@@ -40,14 +40,14 @@ class XMLSerializerSpecs extends Specification {
 
     "serialize elements with multiple unprefixed bindings correctly" in {
       val x = """<a xmlns="urn:x"><b xmlns="urn:y"/></a>"""
-      Elem(NamespaceBinding("urn:x"), "a", Attributes(), NamespaceBinding.empty, Group(
-        Elem(NamespaceBinding("urn:y"), "b", Attributes(), NamespaceBinding.empty, Group()))).toString mustEqual x
+      Elem(QName(NamespaceBinding("urn:x"), "a"), Attributes(), NamespaceBinding.empty, Group(
+        Elem(QName(NamespaceBinding("urn:y"), "b"), Attributes(), NamespaceBinding.empty, Group()))).toString mustEqual x
     }
 
     "not be fooled by unprefixed namespace bindings" in {
       val x = """<a xmlns="urn:x"><b xmlns="urn:y"/></a>"""
-      Elem(NamespaceBinding("urn:x"), "a", Attributes(), NamespaceBinding("urn:y"), Group(
-        Elem(NamespaceBinding("urn:y"), "b", Attributes(), NamespaceBinding.empty, Group()))).toString mustEqual x
+      Elem(QName(NamespaceBinding("urn:x"), "a"), Attributes(), NamespaceBinding("urn:y"), Group(
+        Elem(QName(NamespaceBinding("urn:y"), "b"), Attributes(), NamespaceBinding.empty, Group()))).toString mustEqual x
     }
 
     "not redeclared unnecessary re-reclared namespaces" in {
@@ -83,9 +83,9 @@ class XMLSerializerSpecs extends Specification {
     "serialize pre-emptively added namespace correctly" in {
       val atom = NamespaceBinding("urn:main")
       val ext = NamespaceBinding("ext", "urn:ext")
-      val x = Elem(atom, "feed", Attributes(), ext, Group(
-        Elem(ext, "my-ext", Attributes(), NamespaceBinding.empty, Group()),
-        Elem(ext, "my-ext", Attributes(), NamespaceBinding.empty, Group())
+      val x = Elem(QName(atom, "feed"), Attributes(), ext, Group(
+        Elem(QName(ext, "my-ext"), Attributes(), NamespaceBinding.empty, Group()),
+        Elem(QName(ext, "my-ext"), Attributes(), NamespaceBinding.empty, Group())
       ))
 
       x.toString mustEqual """<feed xmlns="urn:main" xmlns:ext="urn:ext"><ext:my-ext/><ext:my-ext/></feed>"""

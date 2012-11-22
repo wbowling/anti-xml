@@ -57,7 +57,7 @@ class NodeSpecs extends Specification with DataTables with ScalaCheck with XMLGe
       "&"         !! "<foo bar=\"&amp;\"/>"  |
       "'"         !! "<foo bar=\"'\"/>"      |
       "'\"'"      !! "<foo bar='&apos;\"&apos;'/>" |
-      "<"         !! "<foo bar=\"&lt;\"/>"   | { (c, r) => Elem(NamespaceBinding.empty, "foo", Attributes("bar" -> c), NamespaceBinding.empty, Group()).toString mustEqual r }
+      "<"         !! "<foo bar=\"&lt;\"/>"   | { (c, r) => Elem(QName(NamespaceBinding.empty, "foo"), Attributes("bar" -> c), NamespaceBinding.empty, Group()).toString mustEqual r }
     }
     
     "allow legal name identifiers" in {
@@ -67,14 +67,14 @@ class NodeSpecs extends Specification with DataTables with ScalaCheck with XMLGe
       "bar"        |
       "baz"        |
       "br"         | { name =>
-        Elem(NamespaceBinding.empty, name, Attributes(), NamespaceBinding.empty, Group()) must not(throwAn[IllegalArgumentException])
+        Elem(QName(NamespaceBinding.empty, name), Attributes(), NamespaceBinding.empty, Group()) must not(throwAn[IllegalArgumentException])
       }
     }
     
     "detect illegal name identifiers" in check { str: String =>
       name unapplySeq str match {
-        case Some(_) => Elem(NamespaceBinding.empty, str, Attributes(), NamespaceBinding.empty, Group()) must not(throwAn[IllegalArgumentException])
-        case None => Elem(NamespaceBinding.empty, str, Attributes(), NamespaceBinding.empty, Group()) must throwAn[IllegalArgumentException]
+        case Some(_) => Elem(QName(NamespaceBinding.empty, str), Attributes(), NamespaceBinding.empty, Group()) must not(throwAn[IllegalArgumentException])
+        case None => Elem(QName(NamespaceBinding.empty, str), Attributes(), NamespaceBinding.empty, Group()) must throwAn[IllegalArgumentException]
       }
     }
     
@@ -85,14 +85,14 @@ class NodeSpecs extends Specification with DataTables with ScalaCheck with XMLGe
       "bar"        |
       "baz"        |
       "br"         | { name =>
-        Elem(NamespaceBinding(name), "foo", Attributes(), NamespaceBinding.empty, Group()) must not(throwAn[IllegalArgumentException])
+        Elem(QName(NamespaceBinding(name), "foo"), Attributes(), NamespaceBinding.empty, Group()) must not(throwAn[IllegalArgumentException])
       }
     }
     
     "detect illegal prefix identifiers" in check { str: String =>
       name unapplySeq str match {
-        case Some(_) => Elem(NamespaceBinding(str, "urn:a"), "foo", Attributes(), NamespaceBinding.empty, Group()) must not(throwAn[IllegalArgumentException])
-        case None => Elem(NamespaceBinding(str, "urn:a"), "foo", Attributes(), NamespaceBinding.empty, Group()) must throwAn[IllegalArgumentException]
+        case Some(_) => Elem(QName(NamespaceBinding(str, "urn:a"), "foo"), Attributes(), NamespaceBinding.empty, Group()) must not(throwAn[IllegalArgumentException])
+        case None => Elem(QName(NamespaceBinding(str, "urn:a"), "foo"), Attributes(), NamespaceBinding.empty, Group()) must throwAn[IllegalArgumentException]
       }
     }
     
@@ -103,18 +103,18 @@ class NodeSpecs extends Specification with DataTables with ScalaCheck with XMLGe
       "bar"        |
       "baz"        |
       "br"         | { name =>
-        Elem(NamespaceBinding.empty, "foo", Attributes(QName(Some(name), "bar") -> "bar"), NamespaceBinding.empty, Group()) must not(throwAn[IllegalArgumentException])
+        Elem(QName(NamespaceBinding.empty, "foo"), Attributes(QName(NamespaceBinding.empty, "bar") -> "bar"), NamespaceBinding.empty, Group()) must not(throwAn[IllegalArgumentException])
       }
     }
     
     "add children conveniently" in {
-      val elem = Elem(NamespaceBinding.empty, "foo", Attributes(), NamespaceBinding.empty, Group())
-      val withChildren = elem.addChildren(Group(Elem(NamespaceBinding.empty, "bar", Attributes(), NamespaceBinding.empty, Group()), Text("Hello")))
+      val elem = Elem(QName(NamespaceBinding.empty, "foo"), Attributes(), NamespaceBinding.empty, Group())
+      val withChildren = elem.addChildren(Group(Elem(QName(NamespaceBinding.empty, "bar"), Attributes(), NamespaceBinding.empty, Group()), Text("Hello")))
       withChildren.children.size must beEqualTo(2)
     }
 
     "replace children conveniently" in {
-      val elem = Elem(NamespaceBinding.empty, "foo", Attributes(), NamespaceBinding.empty, Group(Text("Somewhat crazy")))
+      val elem = Elem(QName(NamespaceBinding.empty, "foo"), Attributes(), NamespaceBinding.empty, Group(Text("Somewhat crazy")))
       val withChildren = elem.withChildren(Group.empty)
       withChildren.children must beEmpty
     }
@@ -133,8 +133,8 @@ class NodeSpecs extends Specification with DataTables with ScalaCheck with XMLGe
 
     "detect illegal attribute prefixes" in check { str: String =>
       name unapplySeq str match {
-        case Some(_) => Elem(NamespaceBinding.empty, "foo", Attributes(QName(Some(str), "bar") -> "bar"), NamespaceBinding.empty, Group()) must not(throwAn[IllegalArgumentException])
-        case None => Elem(NamespaceBinding.empty, "foo", Attributes(QName(Some(str), "bar") -> "bar"), NamespaceBinding.empty, Group()) must throwAn[IllegalArgumentException]
+        case Some(_) => Elem(QName(NamespaceBinding.empty, "foo"), Attributes(QName(PrefixedNamespaceBinding(str, "urn:bar"), "bar") -> "bar"), NamespaceBinding.empty, Group()) must not(throwAn[IllegalArgumentException])
+        case None => Elem(QName(NamespaceBinding.empty, "foo"), Attributes(QName(PrefixedNamespaceBinding(str, "urn:bar"), "bar") -> "bar"), NamespaceBinding.empty, Group()) must throwAn[IllegalArgumentException]
       }
     }
     
@@ -145,14 +145,14 @@ class NodeSpecs extends Specification with DataTables with ScalaCheck with XMLGe
       "bar"        |
       "baz"        |
       "br"         | { name =>
-        Elem(NamespaceBinding.empty, "foo", Attributes(name -> "bar"), NamespaceBinding.empty, Group()) must not(throwAn[IllegalArgumentException])
+        Elem(QName(NamespaceBinding.empty, "foo"), Attributes(name -> "bar"), NamespaceBinding.empty, Group()) must not(throwAn[IllegalArgumentException])
       }
     }
     
     "detect illegal attribute names" in check { str: String =>
       name unapplySeq str match {
-        case Some(_) => Elem(NamespaceBinding.empty, "foo", Attributes(str -> "bar"), NamespaceBinding.empty, Group()) must not(throwAn[IllegalArgumentException])
-        case None => Elem(NamespaceBinding.empty, "foo", Attributes(str -> "bar"), NamespaceBinding.empty, Group()) must throwAn[IllegalArgumentException]
+        case Some(_) => Elem(QName(NamespaceBinding.empty, "foo"), Attributes(str -> "bar"), NamespaceBinding.empty, Group()) must not(throwAn[IllegalArgumentException])
+        case None => Elem(QName(NamespaceBinding.empty, "foo"), Attributes(str -> "bar"), NamespaceBinding.empty, Group()) must throwAn[IllegalArgumentException]
       }
     }
 

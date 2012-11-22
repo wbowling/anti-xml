@@ -94,7 +94,7 @@ class XMLSerializer(encoding: String, outputDeclaration: Boolean) {
 
     def doSerialize(node: Node, w: Writer) {
       node match {
-        case Elem(prefix, name, attrs, scope, children) => {
+        case Elem(QName(prefix, name), attrs, scope, children) => {
 
           val currentUnprefixedUri = unprefixedUri.find(_.isDefined).map(_.get).getOrElse("")
 
@@ -137,7 +137,7 @@ class XMLSerializer(encoding: String, outputDeclaration: Boolean) {
             ""
           } else {
             val delta = attrs map {
-              case (key, value) => key.toString + "=" + Node.quoteAttribute(value)
+              case (key, value) => key.nameForAttribute + "=" + Node.quoteAttribute(value)
             } mkString " "
 
             " " + delta
