@@ -2,7 +2,7 @@ name := "anti-xml"
 
 organization := "no.arktekk"
 
-version := "0.4-SNAPSHOT"
+version := "0.5-SNAPSHOT"
 
 crossScalaVersions := Seq("2.9.2", "2.9.1", "2.9.0-1", "2.9.0")
 
