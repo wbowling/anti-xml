@@ -144,13 +144,15 @@ case class ProcInstr(target: String, data: String) extends Node {
  * 1) Rename prefix to namespace, scope to namespaces
  * 2) Remove prefix, rename scope to namespace(s), assume that the first is the name of the current element
  */
-case class Elem(name: QName, attrs: Attributes, namespaces: NamespaceBinding, override val children: Group[Node]) extends Node with Selectable[Elem] {
+case class Elem(name: QName, attrs: Attributes = Attributes(), namespaces: NamespaceBinding = NamespaceBinding.empty, override val children: Group[Node] = Group.empty) extends Node with Selectable[Elem] {
   //Elem.validateAttributes(attrs, namespaces.toList)
 
   /**
    * See the `canonicalize` method on [[com.codecommit.antixml.Group]].
    */
   def canonicalize = copy(children=children.canonicalize)
+
+  val localName = name.name
   
   override def toString = {
     val sw = new java.io.StringWriter() 
@@ -167,6 +169,10 @@ case class Elem(name: QName, attrs: Attributes, namespaces: NamespaceBinding, ov
    * Convenience method to allow adding attributes in a chaining fashion.
    */
   def withAttribute(name: QName, value: String) = copy(attrs = attrs + (name -> value))
+
+  def withAttributes(attrs: Seq[(QName, String)]) = copy(attrs = this.attrs ++ attrs)
+
+  def getAttribute(name: QName) = attrs.get(name)
 
   /**
    * Convenience method to allow adding a single child in a chaining fashion.

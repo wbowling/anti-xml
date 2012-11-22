@@ -43,6 +43,8 @@ case class QName(namespace: NamespaceBinding, name: String) {
   }
 }
 
-object QName extends ((NamespaceBinding, String) => QName) {
-  implicit def stringToQName(str: String) = QName(NamespaceBinding.empty, str)
+object QName {
+  def apply(name: String):QName = QName(NamespaceBinding.empty, name)
+
+  implicit def stringToQName(str: String) = apply(str)
 }
