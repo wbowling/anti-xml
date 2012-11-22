@@ -333,12 +333,12 @@ class Group[+A <: Node] private[antixml] (private[antixml] val nodes: VectorCase
   private lazy val bloomFilter: BloomFilter = {
     // note: mutable and horrible for performance
     import Group._
-    val names = new ListBuffer[QName]
+    val names = new ListBuffer[String]
     var childFilter: BloomFilter = null
     
     for (node <- nodes) {
       node match {
-        case Elem(name, _, _, children) => {
+        case Elem(QName(_, name), _, _, children) => {
           names += name
           
           val chbf = children.bloomFilter
@@ -362,7 +362,7 @@ class Group[+A <: Node] private[antixml] (private[antixml] val nodes: VectorCase
   }
 
   /** If true this group may contain an element with the given name as one of its children (recursively). */
-  def matches(name: QName) =
+  def matches(name: String) =
     if (bloomFilter eq Group.emptyBloomFilter) false else bloomFilter contains name
   
   /** Same as `matches(String)`, but works with hashes created by Group.bloomFilterHash. */
@@ -382,8 +382,11 @@ object Group {
   private val emptyBloomFilter = BloomFilter(Nil)(bloomFilterN)
   
   private[antixml] def bloomFilterHash(name: QName): BloomFilter.Hash =
+    BloomFilter.generateHash(bloomFilterN)(name.name)
+
+  private[antixml] def bloomFilterHash(name: String): BloomFilter.Hash =
     BloomFilter.generateHash(bloomFilterN)(name)
-  
+
   /** 
    * Creates instances of [[com.codecommit.antixml.CanBuildFromWithZipper]] for [[com.codecommit.antixml.Group]] types.  
    */

@@ -68,7 +68,7 @@ class XMLSpecs extends Specification {
     }
     
     "parse prefixes" in {
-      fromString("<my:test xmlns:my='urn:my-urn:quux'></my:test>").name mustEqual "test"
+      fromString("<my:test xmlns:my='urn:my-urn:quux'></my:test>").name mustEqual QName(NamespaceBinding("my", "urn:my-urn:quux"), "test")
     }
   }
   

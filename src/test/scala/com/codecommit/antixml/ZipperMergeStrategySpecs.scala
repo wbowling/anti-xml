@@ -72,7 +72,7 @@ class ZipperMergeStrategySpecs extends SpecificationWithJUnit {
     "be uniform" in {
       val orig = <top><a><b /></a></top>.convert
       val elems = orig \\ anyElem
-      val changed = elems.flatMap(x => x.copy(name=x.name+"0") :: x.copy(name=x.name+"1") :: Nil)
+      val changed = elems.flatMap(x => x.withName(x.name.name+"0") :: x.withName(x.name.name+"1") :: Nil)
       val unsel = changed.unselect(AlwaysLocal)
       unsel.stripZipper mustEqual Group(<top><a0><b0 /><b1 /></a0><a1><b0 /><b1 /></a1></top>.convert)
     }
@@ -83,7 +83,7 @@ class ZipperMergeStrategySpecs extends SpecificationWithJUnit {
       val orig = <top><a><b /></a></top>.convert
       val elems = orig \\ anyElem
       
-      val changed = elems.updated(0,elems(0).copy(name="newname"))
+      val changed = elems.updated(0,elems(0).withName("newname"))
       
       val unsel = changed.unselect(RequireLocal)
       
@@ -101,7 +101,7 @@ class ZipperMergeStrategySpecs extends SpecificationWithJUnit {
     "be uniform" in {
       val orig = <top><a><b /></a></top>.convert
       val elems = orig \\ anyElem
-      val changed = elems.flatMap(x => x.copy(name=x.name.copy(name = x.name.name+"0")) :: x.copy(name=x.name.copy(name = x.name.name+"1")) :: Nil)
+      val changed = elems.flatMap(x => x.withName(x.name.name+"0") :: x.withName(x.name.name+"1") :: Nil)
       val unsel = changed.unselect(RequireLocal)
       unsel.stripZipper mustEqual Group(<top><a0><b0 /><b1 /></a0><a1><b0 /><b1 /></a1></top>.convert)
     }
@@ -136,14 +136,14 @@ class ZipperMergeStrategySpecs extends SpecificationWithJUnit {
       val orig = <top><a><b /></a></top>.convert
       val elems = orig \\ anyElem
       
-      val unsel = elems.updated(1,elem("Child")).updated(0,elems(0).copy(name="Parent")).unselect(PreferLatest)
+      val unsel = elems.updated(1,elem("Child")).updated(0,elems(0).withName("Parent")).unselect(PreferLatest)
       
       unsel.stripZipper mustEqual Group(<top><Parent><Child /></Parent></top>.convert)
     }
     "be uniform" in {
       val orig = <top><a><b /></a></top>.convert
       val elems = orig \\ anyElem
-      val changed = elems.flatMap(x => x.copy(name=x.name+"0") :: x.copy(name=x.name+"1") :: Nil)
+      val changed = elems.flatMap(x => x.withName(x.name.name+"0") :: x.withName(x.name.name+"1") :: Nil)
       val unsel = changed.unselect(PreferLatest)
       unsel.stripZipper mustEqual Group(<top><a0><b0 /><b1 /></a0><a1><b0 /><b1 /></a1></top>.convert)
     }

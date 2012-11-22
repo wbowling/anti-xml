@@ -211,8 +211,8 @@ class GroupSpecs extends Specification with ScalaCheck with XMLGenerators with U
     
     "map with non-Node result should produce an IndexedSeq" in {
       val group = Group(<parent>child</parent>.convert)
-      val res = group map { _.name }
-      validate[scala.collection.immutable.IndexedSeq[QName]](res)
+      val res = group map { _.name.name }
+      validate[scala.collection.immutable.IndexedSeq[String]](res)
       res mustEqual Vector("parent")
     }
     
@@ -274,7 +274,7 @@ class GroupSpecs extends Specification with ScalaCheck with XMLGenerators with U
   "Group.matches" should {
     "never produce false negatives for Strings" in check { (xml: Group[Node]) =>
       val allElems = xml \\ anyElem
-      allElems forall {e => xml.matches(e.name)} must beTrue
+      allElems forall {e => xml.matches(e.name.name)} must beTrue
     }
     "never produce false negatives for Hashes" in check { (xml: Group[Node]) =>
       val allElems = xml \\ anyElem

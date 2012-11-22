@@ -70,6 +70,20 @@ object Selector {
       def canMatchIn(group: Group[Node]) = true
     }
 
+  implicit def qnameBindingSelector(name: QName): Selector[Elem] =
+    new OptimizingSelector[Elem] {
+      private val pf: PartialFunction[Node, Elem] = {
+        case e @ Elem(`name`, _, _, _) => e
+      }
+      private val hash = Group.bloomFilterHash(name)
+
+      def apply(node: Node) = pf(node)
+      def isDefinedAt(node: Node) = pf isDefinedAt node
+      // TODO: I can't come up with a better implementation for now - Trygve
+      def canMatchIn(group: Group[Node]) = group.matches(hash)
+    }
+
+
   implicit def tupleToSelector[A <: NSRepr](t: (A, String)): Selector[Elem] =
     new OptimizingSelector[Elem] {
       val namespace = t._1.uri

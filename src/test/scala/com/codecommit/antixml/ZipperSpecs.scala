@@ -246,8 +246,8 @@ class ZipperSpecs extends SpecificationWithJUnit with ScalaCheck  with XMLGenera
       val bookstore2: Group[Node] = authors.updated(0, author0).updated(2, author2).updated(3, author3).unselect.unselect
 
       // find afresh without using >
-      bookstore2.head.asInstanceOf[Elem].name mustEqual "bookstore"
-      bookstore2.head.asInstanceOf[Elem].children(0).asInstanceOf[Elem].name mustEqual "book"
+      bookstore2.head.asInstanceOf[Elem].name.name mustEqual "bookstore"
+      bookstore2.head.asInstanceOf[Elem].children(0).asInstanceOf[Elem].name.name mustEqual "book"
 
       bookstore2.head.asInstanceOf[Elem].children(0).asInstanceOf[Elem].children must haveSize(2)
       bookstore2.head.asInstanceOf[Elem].children(0).asInstanceOf[Elem].children(1).asInstanceOf[Elem].attrs mustEqual Attributes("updated" -> "yes")
@@ -591,60 +591,60 @@ class ZipperSpecs extends SpecificationWithJUnit with ScalaCheck  with XMLGenera
     val anyElem = Selector[Elem]( {case e: Elem => e} )
     
     "support forEach" in {
-      val elems = (bookstore \\ anyElem).withFilter(e => e.name != "book")
+      val elems = (bookstore \\ anyElem).withFilter(e => e.name.name != "book")
       var count = 0
       elems.foreach { e =>
         count = count + 1
-        e.name must beOneOf("title", "author")
+        e.name.name must beOneOf("title", "author")
       }
       count mustEqual 7
     }
     
     "support forEach with multiple filters" in {
-      val elems = (bookstore \\ anyElem).withFilter(e => e.name != "book").withFilter(e => e.name != "title")
+      val elems = (bookstore \\ anyElem).withFilter(e => e.name.name != "book").withFilter(e => e.name.name != "title")
       var count = 0
       elems.foreach { e =>
         count = count + 1
-        e.name mustEqual("author")
+        e.name.name mustEqual("author")
       }
       count mustEqual 4
     }
     
     "support map" in {
-      val elems = (bookstore \\ anyElem).withFilter(e => e.name != "book").map(e => rewriteName(e, _.toUpperCase))
+      val elems = (bookstore \\ anyElem).withFilter(e => e.name.name != "book").map(e => rewriteName(e, _.toUpperCase))
       elems.foreach { e =>
-        e.name must beOneOf("TITLE", "AUTHOR")
+        e.name.name must beOneOf("TITLE", "AUTHOR")
       }
       elems.length mustEqual 7
     }
 
     "support map with multiple filters" in {
-      val elems = (bookstore \\ anyElem).withFilter(e => e.name != "book")
-          .withFilter(e => e.name != "title")
+      val elems = (bookstore \\ anyElem).withFilter(e => e.name.name != "book")
+          .withFilter(e => e.name.name != "title")
           .map(e => rewriteName(e, _.toUpperCase))
       elems.foreach { e =>
-        e.name mustEqual("AUTHOR")
+        e.name.name mustEqual("AUTHOR")
       }
       elems.length mustEqual 4
     }
 
     "support flatMap" in {
       val elems = (bookstore \\ anyElem)
-          .withFilter(e => e.name != "book")
+          .withFilter(e => e.name.name != "book")
           .flatMap(e => e :: e :: Nil)
       elems.foreach { e =>
-        e.name must beOneOf("title", "author")
+        e.name.name must beOneOf("title", "author")
       }
       elems.length mustEqual 14
     }
     
     "support flatMap with multiple filters" in {
       val elems = (bookstore \\ anyElem)
-          .withFilter(e => e.name != "book")
-          .withFilter(e => e.name != "title")
+          .withFilter(e => e.name.name != "book")
+          .withFilter(e => e.name.name != "title")
           .flatMap(e => e :: e :: Nil)
       elems.foreach { e =>
-        e.name mustEqual("author")
+        e.name.name mustEqual("author")
       }
       elems.length mustEqual 8
     }
@@ -661,7 +661,7 @@ class ZipperSpecs extends SpecificationWithJUnit with ScalaCheck  with XMLGenera
     }
     
     "preserve zipper context after flatMap" in {
-      val elems = (bookstore \ anyElem \ anyElem).withFilter(e => e.name != "author").flatMap(e => e :: e :: Nil)
+      val elems = (bookstore \ anyElem \ anyElem).withFilter(e => e.name.name != "author").flatMap(e => e :: e :: Nil)
       val result = elems.unselect.unselect
       (result \ 'book).length mustEqual 3
       (result \ 'book \ 'title).length mustEqual 6

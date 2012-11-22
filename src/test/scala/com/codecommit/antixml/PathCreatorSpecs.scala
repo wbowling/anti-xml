@@ -82,7 +82,7 @@ class PathCreatorSpecs extends SpecificationWithJUnit {
     
     "find matches at mixed levels" in {
       val sel = Selector({
-        case e:Elem if e.name == "a0" => e
+        case e:Elem if e.name.name == "a0" => e
         case t:Text => t
       })
       vec(allMaximalChildren(sel)(group)) mustEqual (directChild.take(1) ++ rest.drop(1)).sortBy(pathKeys)      
@@ -101,15 +101,16 @@ class PathCreatorSpecs extends SpecificationWithJUnit {
     
     "find matches at mixed levels" in {
       val sel = Selector({
-        case e:Elem if e.name == "a0" => e
+        case e:Elem if e.name.name == "a0" => e
         case t:Text => t
       })
       vec(allMaximal(sel)(group)) mustEqual (directChild.take(1) ++ rest.drop(1)).sortBy(pathKeys)      
     }
 
     "find matches at mixed levels 2" in {
+      val targets = Set("root0", "a0", "a1")
       val sel = Selector({
-        case e:Elem if e.name == "root0" || e.name=="a0" || e.name=="a1" => e
+        case e:Elem if targets.contains(e.name.name) => e
         case t:Text => t 
       })
       vec(allMaximal(sel)(group)) mustEqual (root.take(1) ++ directChild.drop(3).take(1) ++ rest.drop(3)).sortBy(pathKeys)      

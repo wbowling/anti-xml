@@ -77,7 +77,7 @@ class StAXSpecs extends Specification {
 
     "reuse namespace binding objects even if it's re-declared" in {
       val e = StAXParser.fromString("<a xmlns='urn:a'><b xmlns='urn:a'/></a>")
-      e.name.namespace.uri must beTheSameAs(e.children.head.asInstanceOf[Elem].name.namespace.uri)
+      e.name.namespace must beTheSameAs(e.children.head.asInstanceOf[Elem].name.namespace)
     }
   }
 }

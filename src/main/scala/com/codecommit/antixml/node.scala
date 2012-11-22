@@ -145,7 +145,7 @@ case class ProcInstr(target: String, data: String) extends Node {
  * 2) Remove prefix, rename scope to namespace(s), assume that the first is the name of the current element
  */
 case class Elem(name: QName, attrs: Attributes, namespaces: NamespaceBinding, override val children: Group[Node]) extends Node with Selectable[Elem] {
-  Elem.validateAttributes(attrs, namespaces.toList)
+  //Elem.validateAttributes(attrs, namespaces.toList)
 
   /**
    * See the `canonicalize` method on [[com.codecommit.antixml.Group]].
@@ -160,6 +160,8 @@ case class Elem(name: QName, attrs: Attributes, namespaces: NamespaceBinding, ov
   }
   
   def toGroup = Group(this)
+
+  def withName(name: String) = copy(name = this.name.copy(name = name))
 
   /**
    * Convenience method to allow adding attributes in a chaining fashion.
