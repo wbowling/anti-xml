@@ -35,7 +35,7 @@ import XML._
 import com.codecommit.antixml.Zipper._
 import scala.io.Source
 
-class ZipperSpecs extends SpecificationWithJUnit with ScalaCheck  with XMLGenerators {
+class ZipperSpecs extends Specification with ScalaCheck with XMLGenerators with LowPrioritiyImplicits {
 
   implicit val params = set(maxSize -> 10, minTestsOk -> 20)
   val bookstore = resource("bookstore.xml")
@@ -445,7 +445,7 @@ class ZipperSpecs extends SpecificationWithJUnit with ScalaCheck  with XMLGenera
     "utility methods on Zipper" >> {
       implicit val arbInt = Arbitrary(Gen.choose(0, 10))
 
-      "identity collect should return self" in check { (xml: Group[Node], n: Int) =>
+      "identity collect should return self" in prop { (xml: Group[Node], n: Int) =>
         val func = (0 until n).foldLeft(identity: Zipper[Node] => Zipper[Node]) { (g, _) =>
           g andThen { _ collect { case e => e } }
         }
@@ -453,12 +453,12 @@ class ZipperSpecs extends SpecificationWithJUnit with ScalaCheck  with XMLGenera
         func(xml.toZipper) mustEqual xml
       }
 
-      "identity filter should return self" in check { xml: Group[Node] =>
+      "identity filter should return self" in prop { xml: Group[Node] =>
         val result = xml.toZipper filter Function.const(true)
         result mustEqual xml
       }
 
-      "identity filter and unselect should return self" in check { xml: Group[Node] =>
+      "identity filter and unselect should return self" in prop { xml: Group[Node] =>
         val sub = xml \ *
         (sub filter Function.const(true) unselect) mustEqual xml
       }
@@ -682,10 +682,8 @@ class ZipperSpecs extends SpecificationWithJUnit with ScalaCheck  with XMLGenera
       val cfmwi = zipper.conditionalFlatMapWithIndex(f)
       val equiv = xml.zipWithIndex.flatMap {case (n,i) => f(n,i).getOrElse(Seq(n))}
       
-      Seq(
-        Vector(cfmwi:_*) mustEqual Vector(equiv:_*),
-        cfmwi.length mustEqual xml.length
-      )
+      Vector(cfmwi:_*) mustEqual Vector(equiv:_*)
+      cfmwi.length mustEqual xml.length
     }
     
     "work with complex replacements" in check { (xml: Group[Node]) =>
@@ -703,10 +701,8 @@ class ZipperSpecs extends SpecificationWithJUnit with ScalaCheck  with XMLGenera
       val expectedTripples = (xml.length) >>> 2
       val expectedLength = xml.length - expectedDels + 2*expectedTripples
       
-      Seq(
-        Vector(cfmwi:_*) mustEqual Vector(equiv:_*),
-        cfmwi.length mustEqual expectedLength
-      )
+      Vector(cfmwi:_*) mustEqual Vector(equiv:_*)
+      cfmwi.length mustEqual expectedLength
     }
     
     "preserve zipper context with simple replacements" in {

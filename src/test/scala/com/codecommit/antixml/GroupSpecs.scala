@@ -31,11 +31,8 @@ package com.codecommit.antixml
 import org.specs2.mutable._
 import org.specs2.ScalaCheck
 import org.scalacheck._
-import scala.collection.mutable.Builder
-import scala.collection.generic.CanBuildFrom
 
-class GroupSpecs extends Specification with ScalaCheck with XMLGenerators with UtilGenerators {
-  import Prop._
+class GroupSpecs extends Specification with ScalaCheck with XMLGenerators with UtilGenerators with LowPrioritiyImplicits {
   import XML._
   
   lazy val numProcessors = Runtime.getRuntime.availableProcessors()
@@ -216,7 +213,7 @@ class GroupSpecs extends Specification with ScalaCheck with XMLGenerators with U
       res mustEqual Vector("parent")
     }
     
-    "identity collect should return self" in check { (xml: Group[Node], n: Int) =>
+    "identity collect should return self" in prop { (xml: Group[Node], n: Int) =>
       val func = (0 until n).foldLeft(identity: Group[Node] => Group[Node]) { (g, _) =>
         g andThen { _ collect { case e => e } }
       }
@@ -224,18 +221,19 @@ class GroupSpecs extends Specification with ScalaCheck with XMLGenerators with U
       func(xml) mustEqual xml
     }
     
-    "foreach should traverse group" in check { (xml: Group[Node]) =>
+    "foreach should traverse group" in prop { (xml: Group[Node]) =>
       val b = Vector.newBuilder[Node]
       xml foreach {b += _}
       val v = b.result
       val results = for(i <- 0 until xml.length) yield v(i) mustEqual xml(i)
-      (v.length mustEqual xml.length) +: results
+      val r: Prop = (v.length mustEqual xml.length) +: results
+      r
     }
   }
   
   "Group.conditionalFlatMapWithIndex" should {
     
-    "work with simple replacements" in check { (xml: Group[Node]) =>
+    "work with simple replacements" in prop { (xml: Group[Node]) =>
       def f(n: Node, i: Int): Option[Seq[Node]] = n match {
         case n if (i & 1) == 0 => None
         case e: Elem => Some(Seq(e.copy(name=e.name.copy(name = e.name.name.toUpperCase))))
@@ -243,14 +241,15 @@ class GroupSpecs extends Specification with ScalaCheck with XMLGenerators with U
       }
       val cfmwi = xml.conditionalFlatMapWithIndex(f)
       val equiv = xml.zipWithIndex.flatMap {case (n,i) => f(n,i).getOrElse(Seq(n))}
-      
-      Seq(
+
+      val r: Prop = Seq(
         Vector(cfmwi:_*) mustEqual Vector(equiv:_*),
         cfmwi.length mustEqual xml.length
       )
+      r
     }
     
-    "work with complex replacements" in check { (xml: Group[Node]) =>
+    "work with complex replacements" in prop { (xml: Group[Node]) =>
       def f(n: Node, i: Int): Option[Seq[Node]] = n match {
         case n if (i & 1) == 0 => None
         case _ if (i & 2) == 0 => Some(Seq())
@@ -264,19 +263,20 @@ class GroupSpecs extends Specification with ScalaCheck with XMLGenerators with U
       val expectedTripples = (xml.length) >>> 2
       val expectedLength = xml.length - expectedDels + 2*expectedTripples
       
-      Seq(
+      val r: Prop = Seq(
         Vector(cfmwi:_*) mustEqual Vector(equiv:_*),
         cfmwi.length mustEqual expectedLength
       )
+      r
     }
   }
   
   "Group.matches" should {
-    "never produce false negatives for Strings" in check { (xml: Group[Node]) =>
+    "never produce false negatives for Strings" in prop { (xml: Group[Node]) =>
       val allElems = xml \\ anyElem
       allElems forall {e => xml.matches(e.name.name)} must beTrue
     }
-    "never produce false negatives for Hashes" in check { (xml: Group[Node]) =>
+    "never produce false negatives for Hashes" in prop { (xml: Group[Node]) =>
       val allElems = xml \\ anyElem
       allElems forall {e => xml.matches(Group.bloomFilterHash(e.name))} must beTrue
     }
@@ -285,7 +285,7 @@ class GroupSpecs extends Specification with ScalaCheck with XMLGenerators with U
   "canonicalization" should {
     import Node.hasOnlyValidChars
     
-    "merge two adjacent text nodes" in check { (left: String, right: String) =>
+    "merge two adjacent text nodes" in prop { (left: String, right: String) =>
       if (hasOnlyValidChars(left + right)) {
         Group(Text(left), Text(right)).canonicalize mustEqual Group(Text(left + right))
         Group(CDATA(left), CDATA(right)).canonicalize mustEqual Group(CDATA(left + right))
@@ -294,7 +294,7 @@ class GroupSpecs extends Specification with ScalaCheck with XMLGenerators with U
       }
     }
     
-    "merge two adjacent text nodes at end of Group" in check { (left: String, right: String) =>
+    "merge two adjacent text nodes at end of Group" in prop { (left: String, right: String) =>
       if (hasOnlyValidChars(left + right)) {
         Group(elem("foo"), elem("bar", Text("test")), Text(left), Text(right)).canonicalize mustEqual Group(elem("foo"), elem("bar", Text("test")), Text(left + right))
         Group(elem("foo"), elem("bar", Text("test")), CDATA(left), CDATA(right)).canonicalize mustEqual Group(elem("foo"), elem("bar", Text("test")), CDATA(left + right))
@@ -303,7 +303,7 @@ class GroupSpecs extends Specification with ScalaCheck with XMLGenerators with U
       }
     }
     
-    "merge two adjacent text nodes at beginning of Group" in check { (left: String, right: String) =>
+    "merge two adjacent text nodes at beginning of Group" in prop { (left: String, right: String) =>
       if (hasOnlyValidChars(left + right)) {
         Group(Text(left), Text(right), elem("foo"), elem("bar", Text("test"))).canonicalize mustEqual Group(Text(left + right), elem("foo"), elem("bar", Text("test")))
         Group(CDATA(left), CDATA(right), elem("foo"), elem("bar", Text("test"))).canonicalize mustEqual Group(CDATA(left + right), elem("foo"), elem("bar", Text("test")))
@@ -312,7 +312,7 @@ class GroupSpecs extends Specification with ScalaCheck with XMLGenerators with U
       }
     }
     
-    "merge two adjacent text nodes at depth" in check { (left: String, right: String) =>
+    "merge two adjacent text nodes at depth" in prop { (left: String, right: String) =>
       if (hasOnlyValidChars(left + right)) {
         Group(elem("foo", elem("bar", Text(left), Text(right)))).canonicalize mustEqual Group(elem("foo", elem("bar", Text(left + right))))
         Group(elem("foo", elem("bar", CDATA(left), CDATA(right)))).canonicalize mustEqual Group(elem("foo", elem("bar", CDATA(left + right))))
@@ -321,7 +321,7 @@ class GroupSpecs extends Specification with ScalaCheck with XMLGenerators with U
       }
     }
     
-    "not merge adjacent text and cdata nodes" in check { (left: String, right: String) =>
+    "not merge adjacent text and cdata nodes" in prop { (left: String, right: String) =>
       if (hasOnlyValidChars(left + right)) {
         Group(CDATA(left), Text(right)).canonicalize mustEqual Group(CDATA(left), Text(right))
         Group(Text(left), CDATA(right)).canonicalize mustEqual Group(Text(left), CDATA(right))
@@ -330,7 +330,7 @@ class GroupSpecs extends Specification with ScalaCheck with XMLGenerators with U
       }
     }
     
-    "always preserve serialized equality" in check { g: Group[Node] =>
+    "always preserve serialized equality" in prop { g: Group[Node] =>
       g.canonicalize.toString mustEqual g.toString
     }
   }

@@ -12,8 +12,8 @@ scalacOptions += "-deprecation"
 
 libraryDependencies <++= (scalaVersion) { v =>
   Seq(
-    "org.scala-tools.testing" %% "scalacheck" % "1.9" % "test" withSources,
-    "org.specs2" %% "specs2" % "1.5" % "test" withSources,
+    "org.scalacheck" %% "scalacheck" % "1.10.0" % "test" withSources,
+    "org.specs2" %% "specs2" % "1.12" % "test" withSources,
     "com.github.dmlap" %% "sizeof" % "0.1" % "test" from "http://cloud.github.com/downloads/dmlap/jvm-sizeof/jvm-sizeof-0.1.jar")
 }
 

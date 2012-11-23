@@ -32,7 +32,7 @@ import org.specs2.mutable._
 import com.codecommit.antixml.ZipperMergeStrategy._
 import XML._
 
-class ZipperMergeStrategySpecs extends SpecificationWithJUnit {
+class ZipperMergeStrategySpecs extends Specification {
 
   "The AlwaysPreferChildren strategy" should {
     "ignore updates to parent in a parent-child conflict" in {

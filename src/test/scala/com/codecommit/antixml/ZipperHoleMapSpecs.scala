@@ -29,7 +29,7 @@
 package com.codecommit.antixml
 
 import org.specs2.mutable._
-import org.specs2.ScalaCheck
+import org.specs2.{execute, ScalaCheck}
 import org.specs2.execute.Result
 import org.specs2.matcher.Parameters
 import org.scalacheck.{Arbitrary, Prop, Gen, Choose}
@@ -91,7 +91,7 @@ class ZipperHoleMapSpecs extends Specification with ScalaCheck {
             hm(i) must throwA[Throwable]
           }
         }
-        r
+        true
       }
     }
   }
@@ -116,7 +116,7 @@ class ZipperHoleMapSpecs extends Specification with ScalaCheck {
       forAll(Gen.listOf(saneEntries[Int])) { entries =>
         val hm = ZipperHoleMap(entries:_*)
         val m = Map(entries:_*)
-        val r:Result = for(i <- (minSaneLoc - 5) to (maxSaneLoc + 5)) yield {
+        val r:Prop = for(i <- (minSaneLoc - 5) to (maxSaneLoc + 5)) yield {
           hm.get(i) mustEqual m.get(p(i))
         }
         r
@@ -144,7 +144,7 @@ class ZipperHoleMapSpecs extends Specification with ScalaCheck {
       forAll(Gen.listOf(saneEntries[Int])) { entries =>
         val hm = ZipperHoleMap(entries:_*)
         val m = Map(entries:_*)
-        val r:Result = for(i <- (minSaneLoc - 5) to (maxSaneLoc + 5)) yield {
+        val r:Prop = for(i <- (minSaneLoc - 5) to (maxSaneLoc + 5)) yield {
           hm.contains(i) mustEqual m.contains(p(i))
         }
         r
@@ -174,7 +174,7 @@ class ZipperHoleMapSpecs extends Specification with ScalaCheck {
       forAll(Gen.listOf(saneEntries[Int])) { entries =>
         val hm = ZipperHoleMap(entries:_*)
         val m = Map(entries:_*)
-        val r:Result = for(i <- (minSaneLoc - 5) to (maxSaneLoc + 5)) yield {
+        val r:Prop = for(i <- (minSaneLoc - 5) to (maxSaneLoc + 5)) yield {
           val expect = extensionsOf(p(i)).in(m)
           if (expect.isEmpty)
             hm.children(i) must throwA[Throwable]
@@ -206,7 +206,7 @@ class ZipperHoleMapSpecs extends Specification with ScalaCheck {
       forAll(Gen.listOf(saneEntries[Int])) { entries =>
         val hm = ZipperHoleMap(entries:_*)
         val m = Map(entries:_*)
-        val r:Result = for(i <- (minSaneLoc - 5) to (maxSaneLoc + 5)) yield {
+        val r:Prop = for(i <- (minSaneLoc - 5) to (maxSaneLoc + 5)) yield {
           val expect = extensionsOf(p(i)).in(m)
           hm.hasChildrenAt(i) mustEqual (!expect.isEmpty)
         }
@@ -253,7 +253,7 @@ class ZipperHoleMapSpecs extends Specification with ScalaCheck {
       forAll(Gen.listOf(saneEntries[Int])) { entries =>
         val hm = ZipperHoleMap(entries:_*)
         val m = Map(entries:_*)
-        val r:Result = if (!entries.isEmpty) { 
+        val r:Prop = if (!entries.isEmpty) {
           for(path <- m.keys.toSeq) yield hm.getDeep(path) mustEqual Some(m(path))
         } else {
           //specs chokes on an empty Result sequence, so do something else for the empty case
@@ -330,7 +330,7 @@ class ZipperHoleMapSpecs extends Specification with ScalaCheck {
     items <- Gen.listOf(saneLocations)
     head <- saneLocations
   } yield ZipperPath((head :: items):_*)
-  
+
   //Using a small range to ensure some overlapping prefixes
   private final val minSaneLoc = 0
   private final val maxSaneLoc = 10

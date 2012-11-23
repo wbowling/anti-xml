@@ -28,7 +28,6 @@
 
 package com.codecommit.antixml.util
 
-import scala.collection.generic.CanBuildFrom
 import org.specs2.ScalaCheck
 import org.specs2.mutable._
 import org.specs2.matcher.{Expectable, Parameters, Matcher}
@@ -49,24 +48,24 @@ trait OrderPreservingMapSpecs extends Specification with ScalaCheck {
   "order preserving maps should" should {
     implicit def testDomain = Arbitrary(byteKeyEntries[Byte](0,50))
   
-    "preserve their build order" in check { e: Entries[Byte,Byte] =>
+    "preserve their build order" in prop { e: Entries[Byte,Byte] =>
       buildMap(e) must haveSameOrderAs(e.entries)
     }
-    "correctly report their size" in check { e: Entries[Byte,Byte] =>
+    "correctly report their size" in prop { e: Entries[Byte,Byte] =>
       buildMap(e).size must beEqualTo(e.size)
     }
-    "support empty" in check { e: Entries[Byte,Byte] =>
+    "support empty" in prop { e: Entries[Byte,Byte] =>
       val empty:OrderPreservingMap[Byte,Byte] = buildMap(e).empty
       empty.size must beEqualTo(0)
       empty must haveSameOrderAs(Nil)
     }
-    "support get of key not in map"  in check { e: Entries[Byte,Byte] =>
+    "support get of key not in map"  in prop { e: Entries[Byte,Byte] =>
       val map = buildMap(e)
       val missingKeys = complement(e.keys)
       val results = for(k <- missingKeys) yield map.get(k)
       results must haveSameOrderAs(missingKeys.map((Byte) => None))
     }
-    "support add of key not in map via +"  in check { e: Entries[Byte,Byte] =>
+    "support add of key not in map via +"  in prop { e: Entries[Byte,Byte] =>
       forAll(Gen.oneOf(complement(e.keys))) { k =>
         forAll(Gen.oneOf(allBytes)) { v =>
           val added = (k,v)
@@ -81,7 +80,7 @@ trait OrderPreservingMapSpecs extends Specification with ScalaCheck {
         }
       }
     }
-    "support arbitrary sequences of operations" in check { e: Entries[Byte,Byte] =>
+    "support arbitrary sequences of operations" in prop { e: Entries[Byte,Byte] =>
       forAll(Gen.listOfN(1000, genMapOp[Byte,Byte])) { ops =>
         val (map, expect) = ((buildMap(e),e.entries) /: ops) { (itm, op) =>
           val (m,e) = itm
@@ -98,7 +97,7 @@ trait OrderPreservingMapSpecs extends Specification with ScalaCheck {
   "non-empty order preserving maps" should {
     implicit def testDomain = Arbitrary(byteKeyEntries[Byte](1,50))
     
-    "support removal of first element" in check { e: Entries[Byte,Byte] =>
+    "support removal of first element" in prop { e: Entries[Byte,Byte] =>
       val map = buildMap(e) - e.keys.head
       
       map.size must beEqualTo(e.size - 1)
@@ -106,7 +105,7 @@ trait OrderPreservingMapSpecs extends Specification with ScalaCheck {
       map must haveSameOrderAs(e.entries.tail)
     }
 
-    "support removal of last element" in check { e: Entries[Byte,Byte] =>
+    "support removal of last element" in prop { e: Entries[Byte,Byte] =>
       val map = buildMap(e) - e.keys.last
       
       map.size must beEqualTo(e.size - 1)
@@ -114,7 +113,7 @@ trait OrderPreservingMapSpecs extends Specification with ScalaCheck {
       map must haveSameOrderAs(e.entries.init)
     }
     
-    "support removal of arbitrary element" in check { e: Entries[Byte,Byte] =>
+    "support removal of arbitrary element" in prop { e: Entries[Byte,Byte] =>
       forAll(Gen.choose(0,e.size-1)) { n =>
         val map = buildMap(e) - e.keys(n)
         val expectedEntries = (e.entries take n) ++ (e.entries drop (n+1))
@@ -126,7 +125,7 @@ trait OrderPreservingMapSpecs extends Specification with ScalaCheck {
       }
     }
     
-    "support removal of each element" in check { e: Entries[Byte,Byte] =>
+    "support removal of each element" in prop { e: Entries[Byte,Byte] =>
       //This test is similar to the previous one, except it test all indecies
       //rather than arbitrary ones, but gives less useful information on failure.
       val map = buildMap(e)
@@ -139,10 +138,9 @@ trait OrderPreservingMapSpecs extends Specification with ScalaCheck {
         safeLast(removed) must beEqualTo(safeLast(expectedEntries))
         removed must haveSameOrderAs(expectedEntries)
       }
-      endOfCheck
     }
 
-    "support change of first value via +" in check { e: Entries[Byte,Byte] =>
+    "support change of first value via +" in prop { e: Entries[Byte,Byte] =>
       val changeTo = (e.keys.head , (e.values.head + 1).toByte)
       val map = buildMap(e) + changeTo
       
@@ -153,7 +151,7 @@ trait OrderPreservingMapSpecs extends Specification with ScalaCheck {
       map must haveSameOrderAs(IndexedSeq(changeTo) ++ e.entries.tail)
     }
 
-    "support change of last value via +" in check { e: Entries[Byte,Byte] =>
+    "support change of last value via +" in prop { e: Entries[Byte,Byte] =>
       val changeTo = (e.keys.last , (e.values.last + 1).toByte)
       val map = buildMap(e) + changeTo
       
@@ -164,7 +162,7 @@ trait OrderPreservingMapSpecs extends Specification with ScalaCheck {
       map must haveSameOrderAs(e.entries.init :+ changeTo)
     }
     
-    "support change of arbitrary value via +" in check { e: Entries[Byte,Byte] =>
+    "support change of arbitrary value via +" in prop { e: Entries[Byte,Byte] =>
       forAll(Gen.choose(0,e.size-1)) { n =>
         val changeTo = (e.keys(n), (e.values(n) + 1).toByte)
         val map = buildMap(e) + changeTo
@@ -177,7 +175,7 @@ trait OrderPreservingMapSpecs extends Specification with ScalaCheck {
       }
     }
     
-    "support change of each element via + " in check { e: Entries[Byte,Byte] =>
+    "support change of each element via + " in prop { e: Entries[Byte,Byte] =>
       //This test is similar to the previous one, except it test all indecies
       //rather than arbitrary ones, but gives less useful information on failure.
       val map = buildMap(e)
@@ -191,27 +189,26 @@ trait OrderPreservingMapSpecs extends Specification with ScalaCheck {
         safeLast(changed) must beEqualTo(safeLast(expectedEntries))
         changed must haveSameOrderAs(expectedEntries)
       }
-      endOfCheck
     }
 
     
-    "support get of all keys contained in the map" in check { e: Entries[Byte,Byte] =>
+    "support get of all keys contained in the map" in prop { e: Entries[Byte,Byte] =>
       val map = buildMap(e)
       val results = for((key,value) <- e.entries) yield map.get(key)
       
       results must haveSameOrderAs(e.values map {Some(_)})
     }
     
-    "support head" in check { e: Entries[Byte,Byte] =>
+    "support head" in prop { e: Entries[Byte,Byte] =>
       buildMap(e).head must beEqualTo(e.entries.head)
     }
-    "support last" in check { e: Entries[Byte,Byte] =>
+    "support last" in prop { e: Entries[Byte,Byte] =>
       buildMap(e).last must beEqualTo(e.entries.last)
     }
-    "support tail" in check { e: Entries[Byte,Byte] =>
+    "support tail" in prop { e: Entries[Byte,Byte] =>
       buildMap(e).tail must haveSameOrderAs(e.entries.tail)
     }
-    "support init" in check { e: Entries[Byte,Byte] =>
+    "support init" in prop { e: Entries[Byte,Byte] =>
       buildMap(e).init must haveSameOrderAs(e.entries.init)
     }
     
@@ -226,10 +223,7 @@ trait OrderPreservingMapSpecs extends Specification with ScalaCheck {
     else
       entries :+ (key,value)
   
-  
-  /** Result to return from a check function if nothing else is convenient. */
-  val endOfCheck = org.specs2.execute.Success("Dummy")
-     
+
   def safeHead[A](t: Traversable[A]):Option[A] = if (t.isEmpty) None else Some(t.head)
 
   def safeLast[A](t: Traversable[A]):Option[A] = if (t.isEmpty) None else Some(t.last)

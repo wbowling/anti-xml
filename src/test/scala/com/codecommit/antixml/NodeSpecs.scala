@@ -33,7 +33,7 @@ import org.specs2.matcher.DataTables
 import org.specs2.ScalaCheck
 import org.scalacheck._
 
-class NodeSpecs extends Specification with DataTables with ScalaCheck with XMLGenerators {
+class NodeSpecs extends Specification with DataTables with ScalaCheck with XMLGenerators with LowPrioritiyImplicits {
   import Prop._
   
   lazy val numProcessors = Runtime.getRuntime.availableProcessors()

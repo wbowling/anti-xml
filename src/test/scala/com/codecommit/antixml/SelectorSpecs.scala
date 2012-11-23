@@ -30,7 +30,7 @@ package com.codecommit.antixml
 
 import org.specs2.mutable._
 
-class SelectorSpecs extends Specification {
+class SelectorSpecs extends Specification with LowPrioritiyImplicits {
   
   "the * selector" should {
     "select nothing when parent is empty" in {
