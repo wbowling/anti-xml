@@ -31,8 +31,9 @@ package com.codecommit.antixml
 import org.specs2.mutable._
 import org.specs2.ScalaCheck
 import org.scalacheck._
+import org.specs2.matcher.ResultMatchers
 
-class GroupSpecs extends Specification with ScalaCheck with XMLGenerators with UtilGenerators with LowPrioritiyImplicits {
+class GroupSpecs extends Specification with ScalaCheck with XMLGenerators with UtilGenerators with LowPrioritiyImplicits with ResultMatchers {
   import XML._
   
   lazy val numProcessors = Runtime.getRuntime.availableProcessors()
@@ -226,8 +227,8 @@ class GroupSpecs extends Specification with ScalaCheck with XMLGenerators with U
       xml foreach {b += _}
       val v = b.result
       val results = for(i <- 0 until xml.length) yield v(i) mustEqual xml(i)
-      val r: Prop = (v.length mustEqual xml.length) +: results
-      r
+      val r = (v.length mustEqual xml.length) +: results
+      r must beSuccessful
     }
   }
   
@@ -242,11 +243,10 @@ class GroupSpecs extends Specification with ScalaCheck with XMLGenerators with U
       val cfmwi = xml.conditionalFlatMapWithIndex(f)
       val equiv = xml.zipWithIndex.flatMap {case (n,i) => f(n,i).getOrElse(Seq(n))}
 
-      val r: Prop = Seq(
+      Seq(
         Vector(cfmwi:_*) mustEqual Vector(equiv:_*),
         cfmwi.length mustEqual xml.length
-      )
-      r
+      ) must beSuccessful
     }
     
     "work with complex replacements" in prop { (xml: Group[Node]) =>
@@ -262,12 +262,11 @@ class GroupSpecs extends Specification with ScalaCheck with XMLGenerators with U
       val expectedDels = (xml.length + 2) >>> 2
       val expectedTripples = (xml.length) >>> 2
       val expectedLength = xml.length - expectedDels + 2*expectedTripples
-      
-      val r: Prop = Seq(
+
+      Seq(
         Vector(cfmwi:_*) mustEqual Vector(equiv:_*),
         cfmwi.length mustEqual expectedLength
-      )
-      r
+      ) must beSuccessful
     }
   }
   
