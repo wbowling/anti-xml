@@ -44,9 +44,9 @@ case class QName(namespace: NamespaceBinding, name: String) {
 }
 
 object QName {
-  def apply(name: String):QName = QName(NamespaceBinding.empty, name)
-  def apply(uri: String, name: String):QName = QName(NamespaceBinding(uri), name)
-  def apply(prefix: String, uri: String, name: String):QName = QName(NamespaceBinding(prefix, uri), name)
+  def apply(name: String):QName = QName(NamespaceBinding.empty.noParent, name)
+  def apply(uri: String, name: String):QName = QName(NamespaceBinding(uri).noParent, name)
+  def apply(prefix: String, uri: String, name: String):QName = QName(NamespaceBinding(prefix, uri).noParent, name)
 
   implicit def stringToQName(str: String) = apply(str)
 }

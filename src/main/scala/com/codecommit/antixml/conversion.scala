@@ -136,7 +136,7 @@ object XMLConvertable extends SecondPrecedenceConvertables {
 
       val prefix = namespaceBindings.findByPrefix(if(e.prefix == null) "" else e.prefix).getOrElse(NamespaceBinding.empty)
 
-      Elem(QName(prefix.looseParent, e.label), attrs, namespaceBindings, children)
+      Elem(QName(prefix.noParent, e.label), attrs, namespaceBindings, children)
     }
   }
   
