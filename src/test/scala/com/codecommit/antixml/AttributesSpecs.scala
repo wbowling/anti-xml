@@ -28,18 +28,15 @@
 
 package com.codecommit.antixml
 
-import org.specs2.execute.Pending
 import org.specs2.mutable._
 import org.specs2.ScalaCheck
 import org.specs2.matcher.Parameters
 import org.scalacheck._
-import org.specs2.matcher.ScalaCheckMatchers._
 import scala.collection.mutable.LinkedHashMap
 
 class AttributesSpecs extends Specification with ScalaCheck with XMLGenerators {
   import Prop._
-  val EB = NamespaceBinding.empty
-  
+
   implicit val arbString = Arbitrary(genSaneString)
   
   "attribute sets" should {
@@ -61,7 +58,7 @@ class AttributesSpecs extends Specification with ScalaCheck with XMLGenerators {
       val attrsSafe = attrs - name
       val attrs2:Attributes = attrsSafe + (name -> value)
       attrs2 must havePairs(attrsSafe.toSeq: _*)
-      attrs2 must havePair(QName(EB, name) -> value)
+      attrs2 must havePair(QName(None, name) -> value)
     }
 
     "support multiple addition of qname attrs" in check { (attrs: Attributes, n1: QName, v1: String, n2: QName, v2: String, n3: QName, v3: String) =>
@@ -75,7 +72,7 @@ class AttributesSpecs extends Specification with ScalaCheck with XMLGenerators {
       val (n1,n2,n3) = (x1.name,x2.name,x2.name)
       val attrsSafe = attrs - n1 - n2 - n3
       val attrs2:Attributes = attrsSafe + (n1 -> v1, n2 -> v2, n3 -> v3)
-      val baseline = Map(attrs.toSeq:_*) + (QName(EB,n1) -> v1, QName(EB,n2) -> v2, QName(EB,n3) -> v3)
+      val baseline = Map(attrs.toSeq:_*) + (QName(None,n1) -> v1, QName(None,n2) -> v2, QName(None,n3) -> v3)
       attrs2 must havePairs(baseline.toSeq: _*)
     }
 
@@ -91,7 +88,7 @@ class AttributesSpecs extends Specification with ScalaCheck with XMLGenerators {
       val attrsSafe = attrs - name
       val attrs2:Attributes = attrsSafe.updated(name,value)
       attrs2 must havePairs(attrsSafe.toSeq: _*)
-      attrs2 must havePair(QName(EB, name) -> value)
+      attrs2 must havePair(QName(None, name) -> value)
     }
     
     
@@ -99,10 +96,10 @@ class AttributesSpecs extends Specification with ScalaCheck with XMLGenerators {
     "produce most specific Map with non-String value" in check { attrs: Attributes =>
       val value = new AnyRef
       val attrsSafe = attrs - "foo"
-      val attrs2 = attrsSafe + (QName(EB, "foo") -> value)
+      val attrs2 = attrsSafe + (QName(None, "foo") -> value)
       validate[Map[QName, AnyRef]](attrs2)
       attrs2 must havePairs(attrsSafe.toSeq: _*)
-      attrs2 must havePair(QName(EB, "foo") -> value)
+      attrs2 must havePair(QName(None, "foo") -> value)
     }
     
     "support removal of qname attrs" in { 
@@ -128,21 +125,21 @@ class AttributesSpecs extends Specification with ScalaCheck with XMLGenerators {
     
     "support retrieval of attributes by string" in check { (attrs: Attributes, key: String) =>
       val result = attrs get key
-      result mustEqual (attrs find { case (QName(EB, `key`), _) => true case _ => false } map { _._2 })
+      result mustEqual (attrs find { case (QName(None, `key`), _) => true case _ => false } map { _._2 })
     }
     
     "produce Attributes from collection utility methods returning compatible results" in {
       val attrs = Attributes("foo" -> "bar", "baz" -> "bin")
       val attrs2 = attrs map { case (k, v) => k -> (v + "42") }
       validate[Attributes](attrs2)
-      attrs2 must havePairs(QName(EB, "foo") -> "bar42", QName(EB, "baz") -> "bin42")
+      attrs2 must havePairs(QName(None, "foo") -> "bar42", QName(None, "baz") -> "bin42")
     }
     
     "produce Map from collection utility methods returning incompatible results" in {
       val attrs = Attributes("foo" -> "bar", "baz" -> "bin")
       val attrs2 = attrs map { case (k, v) => k -> 42 }
       validate[Map[QName, Int]](attrs2)
-      attrs2 must havePairs(QName(EB, "foo") -> 42, QName(EB, "baz") -> 42)
+      attrs2 must havePairs(QName(None, "foo") -> 42, QName(None, "baz") -> 42)
     }
     
     "preserve build order" in { 
@@ -158,7 +155,7 @@ class AttributesSpecs extends Specification with ScalaCheck with XMLGenerators {
   "qualified names" should {
     "implicitly convert from String" in check { str: String =>
       val qn: QName = str
-      qn.namespace mustEqual EB
+      qn.prefix must beNone
       qn.name mustEqual str
     }
   }

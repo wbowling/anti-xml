@@ -18,7 +18,7 @@ trait LowPrioritiyImplicits {
     // I feel justified in this global implicit since it doesn't pimp anything
     implicit def stringTupleToQNameTuple(pair: (String, String)): (QName, String) = {
       val (key, value) = pair
-      (QName(NamespaceBinding.empty, key), value)
+      (QName(None, key), value)
     }
 
     implicit def stringToNsRepr(s: String) = NSRepr(s)

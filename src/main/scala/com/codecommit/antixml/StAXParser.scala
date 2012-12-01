@@ -62,17 +62,14 @@ class StAXParser extends XMLParser {
   override def fromString(xml: String): Elem =
     fromReader(new StringReader(xml))
   
-  private case class ElemBuilder(name: String, namespaces: NamespaceBinding, attrs: Attributes)
+  private case class ElemBuilder(prefix: Option[String], name: String, namespaces: NamespaceBinding, attrs: Attributes)
 
   private def fromStreamSource(source: StreamSource): Elem = {
     import XMLStreamConstants.{CHARACTERS, END_ELEMENT, START_ELEMENT}
 
     val xmlReader = XMLInputFactory.newInstance().createXMLStreamReader(source)
     var elems: List[ElemBuilder] = Nil
-    // Map of all used namespaces as empty lists. Enables reuse of instances.
-    var unprefixedNamespaceMap = Map[String, UnprefixedNamespaceBinding]()
-    var prefixedNamespaceMap = Map[(String, String), PrefixedNamespaceBinding]()
-    var scopes = NamespaceBinding.empty
+    var scopes = NamespaceBinding.empty :: Nil
     var results = VectorCase.newBuilder[Node] :: Nil
     val text = new StringBuilder
     while(xmlReader.hasNext) {
@@ -85,117 +82,61 @@ class StAXParser extends XMLParser {
           val children = results.head
           val ancestors = results.tail
 
-          val uri = xmlReader.getNamespaceURI
-          val prefix = xmlReader.getPrefix
-
-          val p = if(uri == null)
-            NamespaceBinding.empty
-          else {
-            if(prefix == null || prefix.equals("")) {
-              unprefixedNamespaceMap.get(uri) match {
-                case Some(nb) => nb
-                case None =>
-                  val x = NamespaceBinding(uri)
-                  unprefixedNamespaceMap = unprefixedNamespaceMap + (uri -> x)
-                  x
-              }
-            }
-            else {
-              prefixedNamespaceMap.get((prefix, uri)) match {
-                case Some(nb) => nb
-                case None =>
-                  val x = NamespaceBinding(prefix, uri)
-                  prefixedNamespaceMap = prefixedNamespaceMap + ((prefix, uri) -> x)
-                  x
-              }
-            }
-          }
-
           if (text.size > 0) {
             children += Text(text.result())
             text.clear()
           }
 
-          ancestors.head += Elem(QName(p, elem.name), elem.attrs, elem.namespaces, Group fromSeq children.result)
+          ancestors.head += Elem(elem.prefix, elem.name, elem.attrs, elem.namespaces, Group fromSeq children.result)
           elems = parents
           results = ancestors
+          scopes = scopes.tail
         }
         case `START_ELEMENT` => {
           if (text.size > 0) {
             results.head += Text(text.result())
             text.clear()
           }
-          var i = 0
-//          println("START_ELEMENT")
-//          println("xmlReader.getNamespaceURI=" + xmlReader.getNamespaceURI)
-//          println("xmlReader.getPrefix=" + xmlReader.getPrefix)
-//          println("xmlReader.getLocalName=" + xmlReader.getLocalName)
-//          println("xmlReader.getNamespaceCount=" + xmlReader.getNamespaceCount)
-          while (i < xmlReader.getNamespaceCount) {
-            val ns = xmlReader.getNamespaceURI(i)
-//            println("xmlReader.getNamespaceURI(i)=" + xmlReader.getNamespaceURI(i))
-            val rawPrefix = xmlReader.getNamespacePrefix(i)
-//            println("rawPrefix=" + xmlReader.getNamespacePrefix(i))
-            val prefix = if (rawPrefix != null) rawPrefix else "" 
-//            println("prefix=" + prefix)
-            scopes =
-              if (xmlReader.getNamespacePrefix(i) == null) {
-                val uri = xmlReader.getNamespaceURI(i)
-                scopes.append(if(uri == null) "" else uri)
-              }
-              else
-                scopes.append(prefix, xmlReader.getNamespaceURI(i))
-            i = i + 1
-          }
-//          println("scopes=" + scopes)
-//          var prefixes = prefixMapping.headOption getOrElse Map()
-//          while (i < xmlReader.getNamespaceCount) {
-//            val ns = xmlReader.getNamespaceURI(i)
-//            val rawPrefix = xmlReader.getNamespacePrefix(i)
-//            val prefix = if (rawPrefix != null) rawPrefix else ""
-//
-//            // To conserve memory, only save prefix if changed
-//            if (prefixes.get(prefix) != Some(ns)) {
-//              prefixes = prefixes + (prefix -> ns)
-//            }
-//            i = i + 1
-//          }
-//          prefixMapping ::= prefixes
-          i = 0
-          var attrs = Attributes()
-          while (i < xmlReader.getAttributeCount) {
-            val localName = xmlReader.getAttributeLocalName(i)
-            val ns = xmlReader.getAttributeNamespace(i)
-            val prefix = {
-              val back = xmlReader.getAttributePrefix(i)
-              if (isBlank(back) && isBlank(ns)) {
-                NamespaceBinding.empty
-              } else if (isBlank(back)) {
-                UnprefixedNamespaceBinding(ns)
-              } else {
-                PrefixedNamespaceBinding(back, ns)
-              }
-            }
-            attrs = attrs + (QName(prefix, localName) -> xmlReader.getAttributeValue(i))
-            i = i + 1
-          }
-          val namespace =
-            if(xmlReader.getPrefix.isEmpty) {
-              val uri = xmlReader.getNamespaceURI
-              if(uri == null)
-                NamespaceBinding.empty
-              else
-                NamespaceBinding(uri)
-            }
-            else
-              NamespaceBinding(xmlReader.getPrefix, xmlReader.getNamespaceURI)
-          elems ::= ElemBuilder(xmlReader.getLocalName, scopes, attrs)
-           results ::= VectorCase.newBuilder[Node]           
+          val currentScopes = handleNamespaces(xmlReader, scopes.head)
+
+          val prefix = Option(xmlReader.getPrefix).filterNot(_.isEmpty)
+          val attrs: Attributes = handleAttributes(xmlReader)
+          elems ::= ElemBuilder(prefix, xmlReader.getLocalName, currentScopes, attrs)
+          scopes ::= currentScopes
+          results ::= VectorCase.newBuilder[Node]
         }
         case _ =>
       }
     }
     results.head.result().head.asInstanceOf[Elem]
+  }
+
+
+  private def handleAttributes(xmlReader: XMLStreamReader): Attributes = {
+    var i = 0
+    var attrs = Attributes()
+    while (i < xmlReader.getAttributeCount) {
+      val localName = xmlReader.getAttributeLocalName(i)
+      val prefix = Option(xmlReader.getAttributePrefix(i)).filterNot(_.isEmpty)
+      attrs = attrs + (QName(prefix, localName) -> xmlReader.getAttributeValue(i))
+      i = i + 1
+    }
+    attrs
+  }
+
+  private def handleNamespaces(xmlReader: XMLStreamReader, _scopes: NamespaceBinding): NamespaceBinding = {
+    var scopes: NamespaceBinding = _scopes
+    var i = 0
+
+    while (i < xmlReader.getNamespaceCount) {
+      val ns = xmlReader.getNamespaceURI(i)
+      val rawPrefix = xmlReader.getNamespacePrefix(i)
+      val prefix = if (rawPrefix != null) rawPrefix else ""
+      val uri = if (ns == null) "" else ns
+      scopes = XMLParser.selectBinding(prefix, uri, scopes)
+      i = i + 1
+    }
+    scopes
   }
 
   def isBlank(back: String): Boolean = {

@@ -104,7 +104,7 @@ trait DeepModifyTrial extends ModifyTrial {self: Trial =>
         case n => n
       }
       deepMap(antiTree) {
-        case e@Elem(QName(_,`selection`),attrs,_,_) => e.asInstanceOf[Elem].copy(attrs = e.attrs +attributeToSet)
+        case e@Elem(_,`selection`,attrs,_,_) => e.asInstanceOf[Elem].copy(attrs = e.attrs +attributeToSet)
         case n => n
       }
     }

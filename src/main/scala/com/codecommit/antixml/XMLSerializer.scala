@@ -29,12 +29,8 @@
 package com.codecommit
 package antixml
 
-import java.io.Writer
-import java.io.File
-import java.io.FileOutputStream
-import java.io.OutputStream
-import java.io.OutputStreamWriter
- 
+import java.io._
+
 class XMLSerializer(encoding: String, outputDeclaration: Boolean) {
 
   /** Serializes an XML document, whose root is given.
@@ -52,7 +48,12 @@ class XMLSerializer(encoding: String, outputDeclaration: Boolean) {
       w.append(encoding)
       w.append("\" standalone=\"yes\"?>")
     }
-    serialize(elem, w)
+    if (w.isInstanceOf[BufferedWriter]) {
+      serialize(elem, w)
+    }
+    else {
+      serialize(elem, new BufferedWriter(w))
+    }
   }
 
   /** Serializes an XML document, whose root is given.
@@ -94,11 +95,11 @@ class XMLSerializer(encoding: String, outputDeclaration: Boolean) {
 
     def doSerialize(node: Node, w: Writer) {
       node match {
-        case Elem(QName(prefix, name), attrs, scope, children) => {
-
+        case Elem(prefix, name, attrs, scope, children) => {
+          val ournamespace = scope.findByPrefix(prefix.getOrElse("")).getOrElse(EmptyNamespaceBinding)
           val currentUnprefixedUri = unprefixedUri.find(_.isDefined).map(_.get).getOrElse("")
 
-          val (qname, xmlns): (String, String) = prefix match {
+          val (qname, xmlns): (String, String) = ournamespace match {
             case EmptyNamespaceBinding =>
               if (currentUnprefixedUri == "") {
                 unprefixedUri = None :: unprefixedUri

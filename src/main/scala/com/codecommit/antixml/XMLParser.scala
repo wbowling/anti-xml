@@ -28,10 +28,7 @@
 
 package com.codecommit.antixml
 
-import org.xml.sax._
-
-import java.io.{InputStream, Reader, StringReader}
-import javax.xml.parsers.SAXParserFactory
+import java.io.{InputStream, Reader}
 
 import scala.io.Source
 
@@ -79,4 +76,27 @@ trait XMLParser {
       source.close()
     }
   }
+}
+
+object XMLParser {
+  private [antixml] def selectBinding(prefix: String, uri: String, scopes: NamespaceBinding): NamespaceBinding = {
+    if (prefix.isEmpty) {
+      if (!scopes.findByUri(uri).isDefined) {
+        val parent = scopes.findByPrefix("").map(_.parent).getOrElse(scopes)
+        parent.append(if (uri == null) "" else uri)
+      }
+      else {
+        scopes
+      }
+    }
+    else {
+      if (!scopes.findByUri(uri).isDefined) {
+        scopes.append(prefix, uri)
+      }
+      else {
+        scopes
+      }
+    }
+  }
+
 }

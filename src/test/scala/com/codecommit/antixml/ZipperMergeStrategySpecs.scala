@@ -72,7 +72,7 @@ class ZipperMergeStrategySpecs extends Specification {
     "be uniform" in {
       val orig = <top><a><b /></a></top>.convert
       val elems = orig \\ anyElem
-      val changed = elems.flatMap(x => x.withName(x.name.name+"0") :: x.withName(x.name.name+"1") :: Nil)
+      val changed = elems.flatMap(x => x.withName(x.name+"0") :: x.withName(x.name+"1") :: Nil)
       val unsel = changed.unselect(AlwaysLocal)
       unsel.stripZipper mustEqual Group(<top><a0><b0 /><b1 /></a0><a1><b0 /><b1 /></a1></top>.convert)
     }
@@ -101,7 +101,7 @@ class ZipperMergeStrategySpecs extends Specification {
     "be uniform" in {
       val orig = <top><a><b /></a></top>.convert
       val elems = orig \\ anyElem
-      val changed = elems.flatMap(x => x.withName(x.name.name+"0") :: x.withName(x.name.name+"1") :: Nil)
+      val changed = elems.flatMap(x => x.withName(x.name+"0") :: x.withName(x.name+"1") :: Nil)
       val unsel = changed.unselect(RequireLocal)
       unsel.stripZipper mustEqual Group(<top><a0><b0 /><b1 /></a0><a1><b0 /><b1 /></a1></top>.convert)
     }
@@ -143,14 +143,14 @@ class ZipperMergeStrategySpecs extends Specification {
     "be uniform" in {
       val orig = <top><a><b /></a></top>.convert
       val elems = orig \\ anyElem
-      val changed = elems.flatMap(x => x.withName(x.name.name+"0") :: x.withName(x.name.name+"1") :: Nil)
+      val changed = elems.flatMap(x => x.withName(x.name+"0") :: x.withName(x.name+"1") :: Nil)
       val unsel = changed.unselect(PreferLatest)
       unsel.stripZipper mustEqual Group(<top><a0><b0 /><b1 /></a0><a1><b0 /><b1 /></a1></top>.convert)
     }
   }
 
   
-  def elem(name: String) = Elem(QName(NamespaceBinding.empty, name), Attributes(), NamespaceBinding.empty, Group())
+  def elem(name: String) = Elem(name)
   
   def anyElem = Selector[Elem]({case x:Elem => x})
 }

@@ -37,23 +37,28 @@ class SAXSpecs extends Specification {
 
   "SAXParser" should {
     "parse a simpleString and generate a single Elem" in {
-      fromString("<a/>") mustEqual Elem(QName(NamespaceBinding.empty, "a"), Attributes(), NamespaceBinding.empty, Group())
+      fromString("<a/>") mustEqual Elem(None, "a", Attributes(), NamespaceBinding.empty, Group())
     }
 
     "parse a simpleString and generate a single Elem even with namespaces" in {
-      fromString("<pf:a xmlns:pf='urn:a'/>") mustEqual Elem(QName(NamespaceBinding("pf", "urn:a"), "a"), Attributes(), NamespaceBinding("pf", "urn:a"), Group())
+      fromString("<pf:a xmlns:pf='urn:a'/>") mustEqual Elem(Some("pf"), "a", Attributes(), NamespaceBinding("pf", "urn:a"), Group())
     }
 
     "parse a simpleString with an non-prefixed namespace" in {
-      fromString("<a xmlns='urn:a'/>") mustEqual Elem(QName(NamespaceBinding("urn:a"), "a"), Attributes(), NamespaceBinding("urn:a"), Group())
+      fromString("<a xmlns='urn:a'/>") mustEqual Elem(None, "a", Attributes(), NamespaceBinding("urn:a"), Group())
     }
 
     "parse a String and generate an Elem" in {
-      fromString("<p:a xmlns:p='ns'>hi<b attr='value' /> there</p:a>") mustEqual Elem(QName(NamespaceBinding("p", "ns"), "a"), Attributes(), NamespaceBinding("p", "ns"), Group(Text("hi"), Elem(QName(NamespaceBinding.empty, "b"), Attributes("attr" -> "value"), NamespaceBinding("p", "ns"), Group()), Text(" there")))
+      fromString("<p:a xmlns:p='ns'>hi<b attr='value' /> there</p:a>") mustEqual Elem(Some("p"), "a", Attributes(), NamespaceBinding("p", "ns"), Group(Text("hi"), Elem(None,"b", Attributes("attr" -> "value"), NamespaceBinding("p", "ns"), Group()), Text(" there")))
     }
 
     "parse a simpleString with both a namespace and an attribute" in {
-      fromString("<a xmlns='urn:a' key='val' />") mustEqual Elem(QName(NamespaceBinding("urn:a"), "a"), Attributes("key"->"val"), NamespaceBinding("urn:a"), Group())
+      fromString("<a xmlns='urn:a' key='val' />") mustEqual Elem(None, "a", Attributes("key"->"val"), NamespaceBinding("urn:a"), Group())
+    }
+
+    "parse a complex document with namespaces" in {
+      val feed = SAXParser.fromInputStream(getClass.getResourceAsStream("/feed.xml"))
+      feed.canonicalize.children.length mustEqual(17)
     }
   }
 }

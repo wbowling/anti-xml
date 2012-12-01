@@ -40,14 +40,14 @@ class XMLSerializerSpecs extends Specification {
 
     "serialize elements with multiple unprefixed bindings correctly" in {
       val x = """<a xmlns="urn:x"><b xmlns="urn:y"/></a>"""
-      Elem(QName(NamespaceBinding("urn:x"), "a"), Attributes(), NamespaceBinding.empty, Group(
-        Elem(QName(NamespaceBinding("urn:y"), "b"), Attributes(), NamespaceBinding.empty, Group()))).toString mustEqual x
+      Elem(None, "a", Attributes(), NamespaceBinding("urn:x"), Group(
+        Elem(None, "b", Attributes(), NamespaceBinding("urn:y"), Group()))).toString mustEqual x
     }
 
     "not be fooled by unprefixed namespace bindings" in {
       val x = """<a xmlns="urn:x"><b xmlns="urn:y"/></a>"""
-      Elem(QName(NamespaceBinding("urn:x"), "a"), Attributes(), NamespaceBinding("urn:y"), Group(
-        Elem(QName(NamespaceBinding("urn:y"), "b"), Attributes(), NamespaceBinding.empty, Group()))).toString mustEqual x
+      Elem(None, "a", Attributes(), NamespaceBinding("urn:x"), Group(
+        Elem(None, "b", Attributes(), NamespaceBinding("urn:y"), Group()))).toString mustEqual x
     }
 
     "not redeclared unnecessary re-reclared namespaces" in {
@@ -81,11 +81,11 @@ class XMLSerializerSpecs extends Specification {
      * use Atom extensions.
      */
     "serialize pre-emptively added namespace correctly" in {
-      val atom = NamespaceBinding("urn:main")
-      val ext = NamespaceBinding("ext", "urn:ext")
-      val x = Elem(QName(atom, "feed"), Attributes(), ext, Group(
-        Elem(QName(ext, "my-ext"), Attributes(), NamespaceBinding.empty, Group()),
-        Elem(QName(ext, "my-ext"), Attributes(), NamespaceBinding.empty, Group())
+      val main = NamespaceBinding("urn:main")
+      val ext = NamespaceBinding("ext", "urn:ext", main)
+      val x = Elem(None, "feed", Attributes(), ext, Group(
+        Elem(Some("ext"), "my-ext", Attributes(), ext, Group()),
+        Elem(Some("ext"), "my-ext", Attributes(), ext, Group())
       ))
 
       x.toString mustEqual """<feed xmlns="urn:main" xmlns:ext="urn:ext"><ext:my-ext/><ext:my-ext/></feed>"""

@@ -36,7 +36,7 @@ trait ZipperOpsTrial { self: Trial =>
   def unselectCount = 1
   //If necessary, override nodePred so that about half the nodes match.
   def nodePred(n: Node): Boolean = n match {
-    case e:Elem => (e.name.name.length & 1) == 0
+    case e:Elem => (e.name.length & 1) == 0
     case _ => false
   }        
   

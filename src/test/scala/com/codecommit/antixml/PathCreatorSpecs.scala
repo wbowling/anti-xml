@@ -80,7 +80,7 @@ class PathCreatorSpecs extends Specification {
     
     "find matches at mixed levels" in {
       val sel = Selector({
-        case e:Elem if e.name.name == "a0" => e
+        case e:Elem if e.name == "a0" => e
         case t:Text => t
       })
       vec(allMaximalChildren(sel)(group)) mustEqual (directChild.take(1) ++ rest.drop(1)).sortBy(pathKeys)      
@@ -99,7 +99,7 @@ class PathCreatorSpecs extends Specification {
     
     "find matches at mixed levels" in {
       val sel = Selector({
-        case e:Elem if e.name.name == "a0" => e
+        case e:Elem if e.name == "a0" => e
         case t:Text => t
       })
       vec(allMaximal(sel)(group)) mustEqual (directChild.take(1) ++ rest.drop(1)).sortBy(pathKeys)      
@@ -108,7 +108,7 @@ class PathCreatorSpecs extends Specification {
     "find matches at mixed levels 2" in {
       val targets = Set("root0", "a0", "a1")
       val sel = Selector({
-        case e:Elem if targets.contains(e.name.name) => e
+        case e:Elem if targets.contains(e.name) => e
         case t:Text => t 
       })
       vec(allMaximal(sel)(group)) mustEqual (root.take(1) ++ directChild.drop(3).take(1) ++ rest.drop(3)).sortBy(pathKeys)      
@@ -145,19 +145,19 @@ class PathCreatorSpecs extends Specification {
     }
 
     "apply selectors at the root level" in {
-      val sel = Selector({ case Elem(QName(_, "root1"), _, _, _) => elem("selected") })
+      val sel = Selector({ case Elem(_, "root1", _, _, _) => elem("selected") })
       vec(fromNodes(sel)(group)) mustEqual Vector(pv(elem("selected"), 1)) 
     }
 
     "apply selectors to the children of the root" in {
-      val sel = Selector({ case Elem(QName(_, "b2"), _, _, _) => elem("selected") })
+      val sel = Selector({ case Elem(_, "b2", _, _, _) => elem("selected") })
       vec(directChildren(sel)(group)) mustEqual Vector(pv(elem("selected"),2,1))
     }
 
     val selDeep = Selector({
-      case Elem(QName(_, "root2"), _, _, _) => elem("selected")
-      case Elem(QName(_, "c1"), _, _, _) => elem("selected")
-      case Elem(QName(_, "b2"), _, _, _) => elem("selected")
+      case Elem(_, "root2", _, _, _) => elem("selected")
+      case Elem(_, "c1", _, _, _) => elem("selected")
+      case Elem(_, "b2", _, _, _) => elem("selected")
       case Text("baz") => Text("selected")
     })
 
@@ -181,7 +181,7 @@ class PathCreatorSpecs extends Specification {
     
   }
   
-  def elem(name: String) = Elem(QName(NamespaceBinding.empty, name), Attributes(), NamespaceBinding.empty, Group())
+  def elem(name: String) = Elem(name)
   
   /** 
    * Returns the indices of the specified PathVal starting at the top.  Note that depth-first

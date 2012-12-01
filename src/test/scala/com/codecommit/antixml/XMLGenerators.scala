@@ -82,11 +82,16 @@ trait XMLGenerators {
   def elemGenerator(depth: Int = 0): Gen[Elem] = for {
     ns <- genSaneOptionString
     name <- genSaneString
-    namespace <- genSaneOptionString
     attrs <- genAttributes
     bindings <- genBindings
     children <- if (depth > MaxGroupDepth) value(Group()) else (listOf(nodeGenerator(depth + 1)) map Group.fromSeq)
-  } yield Elem(QName(namespace.map(UnprefixedNamespaceBinding(_)).getOrElse(NamespaceBinding.empty), name), attrs, bindings, children)
+  } yield {
+    val namespace = attrs.foldLeft(bindings){
+      case (nb, (QName(Some(p), _), _)) => nb.findByPrefix(p).map(_ => nb).getOrElse(nb.append(p, "urn:foo:bar"))
+      case (nb, _) => nb
+    }
+    Elem(ns, name, attrs, namespace, children)
+  }
   
   lazy val textGenerator: Gen[Text] = genSaneString map Text
   
@@ -120,5 +125,5 @@ trait XMLGenerators {
   private lazy val genQName: Gen[QName] = for {
     ns <- genSaneOptionString
     name <- genSaneString
-  } yield QName(NamespaceBinding.empty, name)
+  } yield QName(ns, name)
 }

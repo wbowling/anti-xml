@@ -124,7 +124,7 @@ object XMLConvertable extends SecondPrecedenceConvertables {
   implicit object ElemConvertable extends XMLConvertable[xml.Elem, Elem] {
     def apply(e: xml.Elem) = {
       val attrs = (Attributes() /: e.attributes) {
-        case (attr, pa: xml.PrefixedAttribute) => attr + (QName((PrefixedNamespaceBinding(pa.pre, pa.getNamespace(e))), pa.key) -> pa.value.mkString)
+        case (attr, pa: xml.PrefixedAttribute) => attr + (QName(Option(pa.pre), pa.key) -> pa.value.mkString)
         case (attr, ua: xml.UnprefixedAttribute) => attr + (ua.key -> ua.value.mkString)
         case (attr, _) => attr
       }
@@ -134,9 +134,9 @@ object XMLConvertable extends SecondPrecedenceConvertables {
       val scopes = scope2stream(e.scope).toList.filter(x => x.prefix != null || x.uri != null)
       val namespaceBindings = scopes.foldLeft(NamespaceBinding.empty)((parent, t) => if(t.prefix == null) parent.append(t.uri) else parent.append(t.prefix, t.uri))
 
-      val prefix = namespaceBindings.findByPrefix(if(e.prefix == null) "" else e.prefix).getOrElse(NamespaceBinding.empty)
+      val prefix = Option(e.prefix)
 
-      Elem(QName(prefix.noParent, e.label), attrs, namespaceBindings, children)
+      Elem(prefix, e.label, attrs, namespaceBindings, children)
     }
   }
   

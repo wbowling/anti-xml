@@ -85,7 +85,7 @@ class ConversionSpecs extends Specification with ScalaCheck {
     
     "convert elem names without namespaces" in {
       val e = <test/>.convert
-      e.name mustEqual QName(EmptyNamespaceBinding, "test")
+      e.name mustEqual "test"
     }
 
     /* Unbound namespaces are not allowed according to the XML NS specification, section 5: "Using Qualified Names",
@@ -102,47 +102,50 @@ class ConversionSpecs extends Specification with ScalaCheck {
 
     "convert unprefixed elem names with namespaces" in {
       val e = <test xmlns="urn:foo"/>.convert
-      e.name mustEqual QName(NamespaceBinding("urn:foo"), "test")
+      e.prefix must beNone
+      e.name mustEqual "test"
       e.namespaces mustEqual NamespaceBinding("urn:foo")
     }
 
     // Test case for https://github.com/djspiewak/anti-xml/issues/79
     "convert unprefixed elements and children with namespaces" in {
       val e: Elem = <foo xmlns="urn:a"><bar/></foo>.convert
-      e.name mustEqual QName(NamespaceBinding("urn:a"), "foo")
+      e.name mustEqual "foo"
       e.namespaces mustEqual NamespaceBinding("urn:a")
-      e.children(0).asInstanceOf[Elem].name.namespace mustEqual NamespaceBinding("urn:a")
+      e.children(0).asInstanceOf[Elem].namespaces mustEqual NamespaceBinding("urn:a")
     }
 
     "convert elem names with namespaces declared" in {
       val e = <test xmlns:w="urn:foo"/>.convert
-      e.name mustEqual QName(NamespaceBinding.empty, "test")
+      e.name mustEqual "test"
       e.namespaces mustEqual NamespaceBinding("w" -> "urn:foo")
     }
 
     "convert prefixed elem names with namespaces" in {
       val e = <w:test xmlns:w="urn:foo"/>.convert
-      e.name mustEqual QName(NamespaceBinding("w", "urn:foo"), "test")
+      e.prefix mustEqual Some("w")
+      e.name mustEqual "test"
       e.namespaces mustEqual NamespaceBinding("w" -> "urn:foo")
     }
 
     "convert prefixed elem names with declared namespaces" in {
       val x = <test xmlns="urn:foo" xmlns:bar="urn:bar"/>
       val e = x.convert
-      e.name mustEqual QName(NamespaceBinding("urn:foo"), "test")
+      e.prefix must beNone
+      e.name mustEqual "test"
       e.namespaces mustEqual NamespaceBinding("urn:foo", NamespaceBinding("bar" -> "urn:bar"))
     }
 
     "convert elem attributes" in {
       (<test/>).convert.attrs mustEqual Map()
-      (<test a:c="1" b="foo" xmlns:a="http://boo"/>).convert.attrs mustEqual Attributes(QName(NamespaceBinding("a" -> "http://boo"), "c") -> "1", "b" -> "foo")
+      (<test a:c="1" b="foo" xmlns:a="http://boo"/>).convert.attrs mustEqual Attributes(QName(Some("a"), "c") -> "1", "b" -> "foo")
     }
     
     "convert elem children" in {
       val e = <test>Text1<child/>Text2</test>.convert
       e.children must have size(3)
       e.children(0) mustEqual Text("Text1")
-      e.children(1) mustEqual Elem(QName(NamespaceBinding.empty, "child"), Attributes(), NamespaceBinding.empty, Group())
+      e.children(1) mustEqual Elem(None, "child")
       e.children(2) mustEqual Text("Text2")
     }
     
@@ -150,8 +153,8 @@ class ConversionSpecs extends Specification with ScalaCheck {
       xml.NodeSeq.fromSeq(Nil).convert mustEqual Group()
       
       val result = xml.NodeSeq.fromSeq(List(<test1/>, <test2/>, xml.Text("text"))).convert
-      val expected = Group(Elem(QName(NamespaceBinding.empty, "test1"), Attributes(), NamespaceBinding.empty, Group()),
-        Elem(QName(NamespaceBinding.empty, "test2"), Attributes(), NamespaceBinding.empty, Group()),
+      val expected = Group(Elem(None, "test1", Attributes(), NamespaceBinding.empty, Group()),
+        Elem(None, "test2", Attributes(), NamespaceBinding.empty, Group()),
         Text("text"))
         
       result mustEqual expected

@@ -62,6 +62,16 @@ class SelectorSpecs extends Specification with LowPrioritiyImplicits {
 
       <feed xmlns={ns.uri}><entry/><other xmlns="urn:a"/></feed>.convert \ (ns -> "entry") mustEqual Group(<entry xmlns={ns.uri}/>.convert)
     }
+
+    "find namespaced elements" in {
+      val ns = NSRepr("http://www.w3.org/2005/Atom")
+      val feed = XML.fromInputStream(getClass.getResourceAsStream("/feed.xml"))
+
+      val entries = feed \ (ns -> "entry")
+      entries.length mustEqual 2
+      val second = entries(1) \ (ns -> "content")
+      second.head.namespaces mustEqual(NamespaceBinding("http://www.w3.org/2005/Atom"))
+    }
   }
 
   "Optimizing selectors" should {

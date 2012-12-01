@@ -49,7 +49,7 @@ object Selector {
   implicit def stringToSelector(name: String): Selector[Elem] =
     new OptimizingSelector[Elem] {
       private val pf: PartialFunction[Node, Elem] = {
-        case e @ Elem(QName(_, `name`), _, _, _) => e
+        case e @ Elem(_, `name`, _, _, _) => e
       }
       private val hash = Group.bloomFilterHash(name)
 
@@ -61,7 +61,7 @@ object Selector {
   implicit def namespaceBindingToSelector(nb: NamespaceBinding): Selector[Elem] =
     new OptimizingSelector[Elem] {
       private val pf: PartialFunction[Node, Elem] = {
-        case e @ Elem(QName(NamespaceUri(uri),_), _, _, _) if nb.uri.filter(uri == _).isDefined => e
+        case e @ ElemNamespaceUri(uri) if nb.uri.filter(uri == _).isDefined => e
       }
 
       def apply(node: Node) = pf(node)
@@ -70,10 +70,11 @@ object Selector {
       def canMatchIn(group: Group[Node]) = true
     }
 
-  implicit def qnameBindingSelector(name: QName): Selector[Elem] =
+  implicit def qnameBindingSelector(qname: (Option[String], String)): Selector[Elem] = {
+    val (prefix, name) = qname
     new OptimizingSelector[Elem] {
       private val pf: PartialFunction[Node, Elem] = {
-        case e @ Elem(`name`, _, _, _) => e
+        case e @ Elem(`prefix`, `name`, _, _, _) => e
       }
       private val hash = Group.bloomFilterHash(name)
 
@@ -82,15 +83,14 @@ object Selector {
       // TODO: I can't come up with a better implementation for now - Trygve
       def canMatchIn(group: Group[Node]) = group.matches(hash)
     }
-
+  }
 
   implicit def tupleToSelector[A <: NSRepr](t: (A, String)): Selector[Elem] =
     new OptimizingSelector[Elem] {
       val namespace = t._1.uri
       val name = t._2
       private val pf: PartialFunction[Node, Elem] = {
-        case e @ Elem(QName(nb, `name`), _, _, _) if nb.uri.exists(namespace ==) =>
-          e
+        case e @ ElemNamespaceUri(`namespace`) if (e.name == name) => e
       }
       private val hash = Group.bloomFilterHash(name)
 

@@ -49,8 +49,8 @@ class NodeSeqSAXHandler extends DefaultHandler2 {
   private var elems = List[Group[Node] => Elem]()
   private val text = new StringBuilder
   private var isCDATA = false
-  private var scopes = NamespaceBinding.empty
-  
+  private var currentScope = NamespaceBinding.empty
+
   private var builders = VectorCase.newBuilder[Node] :: Nil
   
   override def startCDATA() {
@@ -59,11 +59,7 @@ class NodeSeqSAXHandler extends DefaultHandler2 {
   }
 
   override def startPrefixMapping(prefix: String, namespace: String) {
-    scopes = if(prefix.isEmpty) scopes.append(namespace) else scopes.append(prefix, namespace)
-  }
-
-  override def endPrefixMapping(prefix: String) {
-    scopes = scopes.parent.getOrElse(NamespaceBinding.empty)
+    currentScope = XMLParser.selectBinding(prefix, namespace, currentScope)
   }
 
   override def endCDATA() {
@@ -108,9 +104,9 @@ class NodeSeqSAXHandler extends DefaultHandler2 {
       val prefix = {
         val qname = attrs.getQName(i)
         if (qname == localName) {
-          NamespaceBinding.empty
+          None
         } else {
-          scopes.findByPrefix(qname.substring(0, qname.length - localName.length -1)).getOrElse(NamespaceBinding.empty)
+          Some(qname.substring(0, qname.length - localName.length -1))
         }
 
       }
@@ -120,14 +116,12 @@ class NodeSeqSAXHandler extends DefaultHandler2 {
 
     builders ::= VectorCase.newBuilder
     elems ::= { children =>
-      val prefix = if (uri.isEmpty)
-        NamespaceBinding.empty
-      else if (qName == localName)
-        UnprefixedNamespaceBinding(uri)
+      val prefix = if (uri.isEmpty || qName == localName)
+        None
       else
-        PrefixedNamespaceBinding(qName.substring(0, qName.length - localName.length - 1), uri)
+        Some(qName.substring(0, qName.length - localName.length - 1))
 
-      Elem(QName(prefix, localName), map, scopes, children)
+      Elem(prefix, localName, map, currentScope, children)
     }
   }
 
@@ -139,6 +133,7 @@ class NodeSeqSAXHandler extends DefaultHandler2 {
     
     val result = build(pop())
     builders.head += result
+
   }
   
   override def skippedEntity(entity: String) {

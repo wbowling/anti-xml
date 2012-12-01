@@ -35,49 +35,53 @@ class StAXSpecs extends Specification {
 
   "StAXParser" should {
     "parse a simple element" in {
-      StAXParser.fromString("<a/>") mustEqual Elem(QName(NamespaceBinding.empty, "a"), Attributes(), NamespaceBinding.empty, Group())
+      StAXParser.fromString("<a/>") mustEqual Elem(None, "a")
     }
     
     "parse an element with namespace" in {
-      StAXParser.fromString("<a xmlns='urn:a'/>") mustEqual Elem(QName(NamespaceBinding("urn:a"), "a"), Attributes(), NamespaceBinding("urn:a"), Group())
+      StAXParser.fromString("<a xmlns='urn:a'/>") mustEqual Elem(None, "a", Attributes(), NamespaceBinding("urn:a"), Group())
     }
 
     "parse an element with default namespace prefix" in {
-      StAXParser.fromString("<a xmlns='urn:a'><b/></a>") mustEqual Elem(QName(NamespaceBinding("urn:a"), "a"), Attributes(), NamespaceBinding("urn:a"), Group(Elem(QName(NamespaceBinding("urn:a"), "b"), Attributes(), NamespaceBinding("urn:a"), Group())))
+      StAXParser.fromString("<a xmlns='urn:a'><b/></a>") mustEqual Elem(None, "a", Attributes(), NamespaceBinding("urn:a"), Group(Elem(None, "b", Attributes(), NamespaceBinding("urn:a"), Group())))
     }
 
     "parse an element with default namespace prefix" in {
-      StAXParser.fromString("<a xmlns='urn:a' xmlns:x='urn:x'><b/></a>") mustEqual Elem(QName(NamespaceBinding("urn:a"), "a"), Attributes(), NamespaceBinding("x", "urn:x", NamespaceBinding("urn:a")), Group(Elem(QName(NamespaceBinding("urn:a"), "b"), Attributes(), NamespaceBinding("x", "urn:x", NamespaceBinding("urn:a")), Group())))
+      StAXParser.fromString("<a xmlns='urn:a' xmlns:x='urn:x'><b/></a>") mustEqual Elem(None, "a", Attributes(), NamespaceBinding("x", "urn:x", NamespaceBinding("urn:a")), Group(Elem(None, "b", Attributes(), NamespaceBinding("x", "urn:x", NamespaceBinding("urn:a")), Group())))
     }
 
     "parse an element with default namespace prefix and child element with a re-defined default namespace" in {
-      StAXParser.fromString("<a xmlns='urn:a'><b xmlns='urn:b'/></a>") mustEqual Elem(QName(NamespaceBinding("urn:a"), "a"), Attributes(), NamespaceBinding("urn:a"), Group(Elem(QName(NamespaceBinding("urn:b"), "b"), Attributes(), NamespaceBinding("urn:b", NamespaceBinding("urn:a")), Group())))
+      StAXParser.fromString("<a xmlns='urn:a'><b xmlns='urn:b'/></a>") mustEqual Elem(None, "a", Attributes(), NamespaceBinding("urn:a"), Group(Elem(None, "b", Attributes(), NamespaceBinding("urn:b"), Group())))
     }
 
     "parse a simpleString and generate an Elem" in {
-      StAXParser.fromString("<a:a xmlns:a='urn:a'>hi<b attr='value' /> there</a:a>") mustEqual Elem(QName(PrefixedNamespaceBinding("a", "urn:a"), "a"), Attributes(), NamespaceBinding("a", "urn:a"), Group(Text("hi"), Elem(QName(NamespaceBinding.empty, "b"), Attributes(QName(NamespaceBinding.empty, "attr") -> "value"), NamespaceBinding("a", "urn:a"), Group()), Text(" there")))
+      StAXParser.fromString("<a:a xmlns:a='urn:a'>hi<b attr='value' /> there</a:a>") mustEqual Elem(Some("a"), "a", Attributes(), NamespaceBinding("a", "urn:a"), Group(Text("hi"), Elem(None, "b", Attributes(QName("attr") -> "value"), NamespaceBinding("a", "urn:a"), Group()), Text(" there")))
     }
 
     "parse a simpleString with an non-prefixed namespace" in {
-      StAXParser.fromString("<a xmlns='urn:a'/>") mustEqual Elem(QName(NamespaceBinding("urn:a"), "a"), Attributes(), NamespaceBinding("urn:a"), Group())
+      StAXParser.fromString("<a xmlns='urn:a'/>") mustEqual Elem(None, "a", Attributes(), NamespaceBinding("urn:a"), Group())
     }
 
     "parse a simpleString with both a namespace and an attribute" in {
-      StAXParser.fromString("<a xmlns='urn:a' key='val' />") mustEqual Elem(QName(NamespaceBinding("urn:a"), "a"), Attributes("key"->"val"), NamespaceBinding("urn:a"), Group())
+      StAXParser.fromString("<a xmlns='urn:a' key='val' />") mustEqual Elem(None, "a", Attributes("key"->"val"), NamespaceBinding("urn:a"), Group())
     }
 
     "parse a simpleString with both a namespace and an attribute" in {
-      StAXParser.fromString("<a xmlns='urn:a' xmlns:b='urn:b-ns' key='val'><b:foo/></a>") mustEqual Elem(QName(NamespaceBinding("urn:a"), "a"), Attributes("key"->"val"), NamespaceBinding("b", "urn:b-ns", NamespaceBinding("urn:a")), Group(Elem(QName(NamespaceBinding("b", "urn:b-ns"), "foo"), Attributes(), NamespaceBinding("b", "urn:b-ns", NamespaceBinding("urn:a")), Group())))
+      StAXParser.fromString("<a xmlns='urn:a' xmlns:b='urn:b-ns' key='val'><b:foo/></a>") mustEqual Elem(None, "a", Attributes("key"->"val"), NamespaceBinding("b", "urn:b-ns", NamespaceBinding("urn:a")), Group(Elem(Some("b"), "foo", Attributes(), NamespaceBinding("b", "urn:b-ns", NamespaceBinding("urn:a")), Group())))
     }
 
     "reuse namespace binding objects, 1" in {
       val e = StAXParser.fromString("<a xmlns='urn:a'><b/></a>")
-      e.name.namespace must beTheSameAs(e.children.head.asInstanceOf[Elem].name.namespace)
+      e.namespaces must beTheSameAs(e.children.head.asInstanceOf[Elem].namespaces)
     }
 
     "reuse namespace binding objects even if it's re-declared" in {
       val e = StAXParser.fromString("<a xmlns='urn:a'><b xmlns='urn:a'/></a>")
-      e.name.namespace must beTheSameAs(e.children.head.asInstanceOf[Elem].name.namespace)
+      e.namespaces must beTheSameAs(e.children.head.asInstanceOf[Elem].namespaces)
+    }
+    "parse a complex document with namespaces" in {
+      val feed = StAXParser.fromInputStream(getClass.getResourceAsStream("/feed.xml"))
+      feed.canonicalize.children.length mustEqual(17)
     }
   }
 }

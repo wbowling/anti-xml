@@ -272,15 +272,15 @@ class Group[+A <: Node] private[antixml] (private[antixml] val nodes: VectorCase
       case ((back, Some(Right(acc))), Text(str)) => (back :+ CDATA(acc), Some(Left(str)))
       
       // terminal recursive
-      case ((back, Some(Left(acc))), Elem(name, attrs, namespace, children)) =>
-        (back :+ Text(acc) :+ Elem(name, attrs, namespace, children.canonicalize), None)
+      case ((back, Some(Left(acc))), Elem(prefix, name, attrs, namespace, children)) =>
+        (back :+ Text(acc) :+ Elem(prefix, name, attrs, namespace, children.canonicalize), None)
       
-      case ((back, Some(Right(acc))), Elem(name, attrs, namespace, children)) =>
-        (back :+ CDATA(acc) :+ Elem(name, attrs, namespace, children.canonicalize), None)
+      case ((back, Some(Right(acc))), Elem(prefix, name, attrs, namespace, children)) =>
+        (back :+ CDATA(acc) :+ Elem(prefix, name, attrs, namespace, children.canonicalize), None)
       
       // primary recursive
-      case ((back, None), Elem(name, attrs, namespace, children)) =>
-        (back :+ Elem(name, attrs, namespace, children.canonicalize), None)
+      case ((back, None), Elem(prefix, name, attrs, namespace, children)) =>
+        (back :+ Elem(prefix, name, attrs, namespace, children.canonicalize), None)
       
       // terminal normal
       case ((back, Some(Left(acc))), n) => (back :+ Text(acc) :+ n, None)
@@ -338,7 +338,7 @@ class Group[+A <: Node] private[antixml] (private[antixml] val nodes: VectorCase
     
     for (node <- nodes) {
       node match {
-        case Elem(QName(_, name), _, _, children) => {
+        case Elem(_, name, _, _, children) => {
           names += name
           
           val chbf = children.bloomFilter
@@ -380,9 +380,6 @@ object Group {
   private final val bloomFilterN = 1024  
   
   private val emptyBloomFilter = BloomFilter(Nil)(bloomFilterN)
-  
-  private[antixml] def bloomFilterHash(name: QName): BloomFilter.Hash =
-    BloomFilter.generateHash(bloomFilterN)(name.name)
 
   private[antixml] def bloomFilterHash(name: String): BloomFilter.Hash =
     BloomFilter.generateHash(bloomFilterN)(name)

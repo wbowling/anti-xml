@@ -137,42 +137,55 @@ case class ProcInstr(target: String, data: String) extends Node {
  * This would result in the following node:
  *
  * {{{
- * Elem("span", attrs = Attributes("id" -> "foo", "class" -> "bar"), children = Group(Text("Lorem ipsum")))
+ * Elem(None, "span", attrs = Attributes("id" -> "foo", "class" -> "bar"), children = Group(Text("Lorem ipsum")))
  * }}}
  * TODO: Consider making Elem not a case class and handle thing a different way.
  */
-case class Elem(name: QName, attrs: Attributes = Attributes(), namespaces: NamespaceBinding = NamespaceBinding.empty, override val children: Group[Node] = Group.empty) extends Node with Selectable[Elem] {
+case class Elem(prefix: Option[String], name: String, attrs: Attributes = Attributes(), namespaces: NamespaceBinding = NamespaceBinding.empty, override val children: Group[Node] = Group.empty) extends Node with Selectable[Elem] {
   //TODO: adding the empty namespacebinding is a hack because we cannot know which ns the attributes are supposed to be ahead of time.
-  Elem.validateAttributes(attrs, EmptyNamespaceBinding :: name.namespace :: namespaces.toList)
+  if (! Elem.isValidName(name)) {
+    throw new IllegalArgumentException("Illegal element name, '" + name + "'")
+  }
+  if (! prefix.forall(Elem.isValidName(_))) {
+    throw new IllegalArgumentException("Illegal element prefix, '" + prefix.getOrElse("") + "'")
+  }
+  Elem.validateAttributes(attrs, namespaces)
 
   /**
    * See the `canonicalize` method on [[com.codecommit.antixml.Group]].
    */
   def canonicalize = copy(children=children.canonicalize)
 
-  val localName = name.name
-  
   override def toString = {
     val sw = new java.io.StringWriter() 
     val xs = XMLSerializer()
     xs.serialize(this, sw)
     sw.toString
   }
+
+  def writeTo(writer: java.io.Writer, charset: java.nio.charset.Charset = java.nio.charset.Charset.forName("UTF-8")) {
+      try {
+        XMLSerializer(charset.name()).serializeDocument(this, writer)
+      }
+      finally {
+        writer.close()
+      }
+  }
   
   def toGroup = Group(this)
 
-  def withName(name: String) = copy(name = this.name.copy(name = name))
+  def withName(name: String) = copy(name = name)
 
   /**
    * Convenience method to allow adding attributes in a chaining fashion.
    */
-  def withAttribute(name: QName, value: String) = copy(attrs = attrs + (name -> value))
+  def withAttribute(attr: (QName, String)) = copy(attrs = attrs + attr)
 
-  def withAttributes(attrs: Seq[(QName, String)]) = copy(attrs = this.attrs ++ attrs)
+  def addAttributes(attrs: Seq[(QName, String)]) = copy(attrs = this.attrs ++ attrs)
 
-  def withAttributes(attrs: Attributes) = copy(attrs = this.attrs ++ attrs)
+  def withAttributes(attrs: Attributes) = copy(attrs = attrs)
 
-  def getAttribute(name: QName) = attrs.get(name)
+  def attr(name: QName) = attrs.get(name)
 
   /**
    * Convenience method to allow adding a single child in a chaining fashion.
@@ -220,7 +233,7 @@ case class Elem(name: QName, attrs: Attributes = Attributes(), namespaces: Names
           val p = nextValidPrefix
           binding.append(p, uri)
         }
-        case (prefix, uri) => binding.append(prefix,uri)
+        case (pfx, uri) => binding.append(pfx, uri)
       }
       
       val binding = namespaces.foldLeft(this.namespaces){case (ns, tuple) => mapit(ns, tuple)}
@@ -236,15 +249,40 @@ object Elem {
     pattern.r
   }
 
-  def apply(name: QName, attrs: Attributes):Elem = apply(name, attrs, NamespaceBinding.empty, Group.empty)
+  def apply(name: String): Elem = apply(name, Attributes())
 
-  def apply(name: QName):Elem = apply(name, Attributes())
+  def apply(name: String, attrs: Attributes): Elem = apply(name, attrs, Group.empty)
+
+  def apply(name: String, attrs: Attributes, children: Group[Node]): Elem = apply(None, name, attrs, NamespaceBinding.empty, children)
+
+  def apply(nb: NamespaceBinding, name: String): Elem = apply(nb, name, Attributes())
+
+  def apply(nb: NamespaceBinding, name: String, attrs: Attributes): Elem = apply(nb, name, attrs, Group.empty)
+
+  def apply(nb: NamespaceBinding, name: String, attrs: Attributes, children: Group[Node]): Elem = {
+    val prefix = nb match {
+      case PrefixedNamespaceBinding(p, _, _) => Some(p)
+      case _ => None
+    }
+    Elem(prefix, name, attrs, nb, children)
+  }
+
+  def validateNamespace(elem: Elem, ns: String) = {
+    val binding = elem.namespaces.findByPrefix(elem.prefix.getOrElse(""))
+    binding.filter(_.uri == Some(ns)).isDefined
+  }
 
   private [antixml] def isValidName(string: String) = NameRegex.pattern.matcher(string).matches
   private [antixml] def isValidNamespaceUri(uri: String) = uri.trim().length() > 0
 
-  private [antixml] def validateAttributes(attrs: Attributes, namespaces: List[NamespaceBinding]) {
-    attrs.keys.foreach(name => if (!namespaces.contains(name.namespace)) throw new IllegalArgumentException("Attribute with name '%s' in '%s' namespace is not defined on element".format(name.name, name.namespace.uri.getOrElse(""))))
+  def validateAttributes(attrs: Attributes, namespaces: NamespaceBinding) {
+    attrs.foreach {
+      case (QName(Some(prefix), name), value) =>
+        if (!namespaces.findByPrefix(prefix).isDefined)
+          throw new IllegalArgumentException("Attribute with name '%s' with prefix '%s' is not defined on element".format(name, prefix)
+      )
+      case _ =>
+    }
   }
 }
 
