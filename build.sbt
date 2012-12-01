@@ -102,9 +102,24 @@ pomExtra <<= (pomExtra, name, description) {(pom, name, desc) => pom ++ xml.Grou
           <name>Erlend Hamnaberg</name>
           <url>http://twitter.com/hamnis</url>
         </contributor>
-         <contributor>
+        <contributor>
           <name>Trygve Laugstøl</name>
           <url>http://twitter.com/trygvis</url>
+        </contributor>
+        <contributor>
+          <name>Daniel Beskin</name>
+        </contributor>
+        <contributor>
+          <name>Joshua Arnold</name>
+        </contributor>
+        <contributor>
+          <name>Martin Kneissl</name>
+        </contributor>
+        <contributor>
+          <name>Erik Engbrecht</name>
+        </contributor>
+        <contributor>
+          <name>Heikki Vesalainen</name>
         </contributor>
       </contributors>
     )}
