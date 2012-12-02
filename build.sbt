@@ -2,9 +2,9 @@ name := "anti-xml"
 
 organization := "no.arktekk"
 
-version := "0.5-SNAPSHOT"
+version := "0.5"
 
-crossScalaVersions := Seq("2.9.2", "2.9.1", "2.9.0-1", "2.9.0")
+crossScalaVersions := Seq("2.9.2", "2.9.1")
 
 scalaVersion := "2.9.1"
 
@@ -13,7 +13,7 @@ scalacOptions += "-deprecation"
 libraryDependencies <++= (scalaVersion) { v =>
   Seq(
     "org.scalacheck" %% "scalacheck" % "1.10.0" % "test" withSources,
-    "org.specs2" %% "specs2" % "1.12" % "test" withSources,
+    "org.specs2" %% "specs2" % "1.12.3" % "test" withSources,
     "com.github.dmlap" %% "sizeof" % "0.1" % "test" from "http://cloud.github.com/downloads/dmlap/jvm-sizeof/jvm-sizeof-0.1.jar")
 }
 
@@ -73,7 +73,7 @@ publishTo <<= (version) apply { (v: String) =>
   }
 }
 
-credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
+credentials += Credentials(Path.userHome / ".sbt" / ".credentials")
 
 seq(aetherPublishSettings: _*)
 
