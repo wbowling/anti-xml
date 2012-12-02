@@ -83,8 +83,6 @@ Anti-XML is cross-built_ for the following Scala versions:
 
 * **2.9.2**
 * **2.9.1**
-* **2.9.0-1**
-* **2.9.0**
 
 .. _cross-built: http://www.scala-sbt.org/release/docs/Detailed-Topics/Cross-Build.html
 .. _Specs2: http://etorreborre.github.com/specs2/
