@@ -29,6 +29,7 @@
 package com.codecommit.antixml
 
 import org.specs2.mutable._
+import java.io.StringWriter
 
 class XMLSerializerSpecs extends Specification {
   import XML._
@@ -89,6 +90,18 @@ class XMLSerializerSpecs extends Specification {
       ))
 
       x.toString mustEqual """<feed xmlns="urn:main" xmlns:ext="urn:ext"><ext:my-ext/><ext:my-ext/></feed>"""
+    }
+
+    /**
+     * This covers the use case where you know/suspect elements to use extra namespaces, like when Atom entries
+     * use Atom extensions.
+     */
+    "serialize parsed xml then reparse" in {
+      val xml = XML.fromInputStream(getClass.getResourceAsStream("/jira-rss-derby-project.xml"))
+      val writer = new StringWriter()
+      xml.writeTo(writer)
+      val xml2 = XML.fromString(writer.toString)
+      xml2 shouldEqual(xml)
     }
   }
 }
