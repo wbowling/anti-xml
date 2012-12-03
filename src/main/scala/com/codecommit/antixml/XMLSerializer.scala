@@ -48,12 +48,7 @@ class XMLSerializer(encoding: String, outputDeclaration: Boolean) {
       w.append(encoding)
       w.append("\" standalone=\"yes\"?>")
     }
-    if (w.isInstanceOf[BufferedWriter]) {
-      serialize(elem, w)
-    }
-    else {
-      serialize(elem, new BufferedWriter(w))
-    }
+    serialize(elem, w)
   }
 
   /** Serializes an XML document, whose root is given.
