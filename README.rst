@@ -50,7 +50,7 @@ Usage
 =====
 
 The Maven artifact descriptor for the latest *stable* version of
-Anti-XML is as follows: ``no.arktekk:anti-xml_2.9.1:0.5``.  We also regularly
+Anti-XML is as follows: ``no.arktekk:anti-xml_2.9.1:0.5.1``.  We also regularly
 push ``-SNAPSHOT`` releases to the Sonatype_ "snapshots" repository, for all
 five of you who like to live dangerously.  You should be able to use this
 descriptor to easily add Anti-XML as a dependency to any project with a
@@ -61,20 +61,25 @@ build systems.
 
 **SBT**::
   
-    val antiXML = "no.arktekk" %% "anti-xml" % "0.5"
+    val antiXML = "no.arktekk" %% "anti-xml" % "0.5.1"
   
 **Buildr**::
   
-    compile.with "no.arktekk:anti-xml_#{Scala.version}:jar:0.5"
+    compile.with "no.arktekk:anti-xml_#{Scala.version}:jar:0.5.1"
   
 **Maven2**::
   
-    <dependency>
+     <dependency>
       <groupId>no.arktekk</groupId>
       <artifactId>anti-xml_2.9.1</artifactId>
-      <version>0.5</version>
+      <version>0.5.1</version>
     </dependency>
-    
+    <dependency>
+      <groupId>no.arktekk</groupId>
+      <artifactId>anti-xml_2.9.2</artifactId>
+      <version>0.5.1</version>
+    </dependency>
+   
   
 Supported Versions of Scala
 ---------------------------
