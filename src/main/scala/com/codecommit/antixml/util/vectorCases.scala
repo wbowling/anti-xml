@@ -45,7 +45,7 @@ private[antixml] sealed trait VectorCase[+A] extends IndexedSeq[A] with IndexedS
   
   def ++[B >: A](that: VectorCase[B]): VectorCase[B]
   
-  def toVector: Vector[A]
+  override def toVector: Vector[A]
 }
 
 private[antixml] object VectorCase {
@@ -102,7 +102,7 @@ private[antixml] object VectorCase {
       }
     }
     
-    def clear() = this
+    def clear() {}
   }
   
   def apply[A](as: A*) = fromSeq(as)
@@ -134,7 +134,7 @@ private[antixml] case object Vector0 extends VectorCase[Nothing] {
   
   override def foreach[U](f: Nothing => U) {}
   
-  def toVector = Vector()
+  override def toVector = Vector()
 }
 
 private[antixml] case class Vector1[+A](_1: A) extends VectorCase[A] {
@@ -172,7 +172,7 @@ private[antixml] case class Vector1[+A](_1: A) extends VectorCase[A] {
 
   // TODO more methods
   
-  def toVector = Vector(_1)
+  override def toVector = Vector(_1)
 }
 
 private[antixml] case class Vector2[+A](_1: A, _2: A) extends VectorCase[A] {
@@ -208,7 +208,7 @@ private[antixml] case class Vector2[+A](_1: A, _2: A) extends VectorCase[A] {
 
   // TODO more methods
   
-  def toVector = Vector(_1, _2)
+  override def toVector = Vector(_1, _2)
 }
 
 private[antixml] case class Vector3[+A](_1: A, _2: A, _3: A) extends VectorCase[A] {
@@ -246,7 +246,7 @@ private[antixml] case class Vector3[+A](_1: A, _2: A, _3: A) extends VectorCase[
 
   // TODO more methods
   
-  def toVector = Vector(_1, _2, _3)
+  override def toVector = Vector(_1, _2, _3)
 }
 
 private[antixml] case class Vector4[+A](_1: A, _2: A, _3: A, _4: A) extends VectorCase[A] {
@@ -286,7 +286,7 @@ private[antixml] case class Vector4[+A](_1: A, _2: A, _3: A, _4: A) extends Vect
 
   // TODO more methods
   
-  def toVector = Vector(_1, _2, _3, _4)
+  override def toVector = Vector(_1, _2, _3, _4)
 }
 
 private[antixml] case class VectorN[+A](vector: Vector[A]) extends VectorCase[A] {
@@ -387,5 +387,5 @@ private[antixml] case class VectorN[+A](vector: Vector[A]) extends VectorCase[A]
   
   override def foreach[U](f: A => U) {vector.foreach(f)}
 
-  def toVector = vector
+  override def toVector = vector
 }

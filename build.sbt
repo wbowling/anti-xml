@@ -4,18 +4,17 @@ organization := "no.arktekk"
 
 version := "0.5.1"
 
-crossScalaVersions := Seq("2.9.2", "2.9.1")
+crossScalaVersions := Seq("2.9.2", "2.9.1", "2.10.0")
 
-scalaVersion := "2.9.1"
+scalaVersion := "2.10.0"
 
 scalacOptions += "-deprecation"
 
-libraryDependencies <++= (scalaVersion) { v =>
-  Seq(
+libraryDependencies ++= Seq(
     "org.scalacheck" %% "scalacheck" % "1.10.0" % "test" withSources,
     "org.specs2" %% "specs2" % "1.12.3" % "test" withSources,
-    "com.github.dmlap" %% "sizeof" % "0.1" % "test" from "http://cloud.github.com/downloads/dmlap/jvm-sizeof/jvm-sizeof-0.1.jar")
-}
+    "com.github.dmlap" %% "sizeof" % "0.1" % "test" from "http://cloud.github.com/downloads/dmlap/jvm-sizeof/jvm-sizeof-0.1.jar"
+)
 
 
 initialCommands in console := """import com.codecommit.antixml._

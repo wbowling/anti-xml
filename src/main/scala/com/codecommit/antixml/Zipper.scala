@@ -121,7 +121,7 @@ import CanBuildFromWithZipper.ElemsWithContext
  * Let T be the sequence of top-level locations in G.  Then `Z.unselect` is defined as `T.flatMap(pullback)`.
  *
  */
-trait Zipper[+A <: Node] extends Group[A] with IndexedSeqLike[A, Zipper[A]] { self =>
+trait Zipper[+A <: Node] extends Group[A] with IndexedSeqLike[A, Zipper[A]] { self: Zipper[A] =>
 
   /** 
    * Returns the original group that was selected upon when the Zipper was created.  A value of `None` indicates that
@@ -176,7 +176,12 @@ trait Zipper[+A <: Node] extends Group[A] with IndexedSeqLike[A, Zipper[A]] { se
     }
     case None => brokenZipper(nodes.slice(from,until))
   }
-   
+
+
+  override def init: Zipper[A] = super.init.toZipper
+
+  override def tail: Zipper[A] = super.tail.toZipper
+
   override def drop(n: Int) = slice(n, size)
   
   override def take(n: Int) = slice(0, n)
@@ -186,10 +191,10 @@ trait Zipper[+A <: Node] extends Group[A] with IndexedSeqLike[A, Zipper[A]] { se
   override def filter(f: A => Boolean): Zipper[A] = collect {
     case e if f(e) => e
   }
-  
+
   override def collect[B, That](pf: PartialFunction[A, B])(implicit cbf: CanBuildFrom[Zipper[A], B, That]): That =
     flatMap(pf.lift andThen { _.toTraversable })
-    
+
   override def map[B, That](f: A => B)(implicit cbf: CanBuildFrom[Zipper[A], B, That]): That = {
     val liftedF = (a: A) => Seq(f(a))
     flatMap(liftedF)(cbf)
@@ -453,8 +458,6 @@ object Zipper {
    */
   private class WithZipperBuilder[A <: Node](parent: Zipper[Node]) extends Builder[ElemsWithContext[A],Zipper[A]] { self =>
     
-    import scala.collection.mutable.HashMap
-    
     private val itemsBuilder = VectorCase.newBuilder[A]
     private val metasBuilder = VectorCase.newBuilder[(ZipperPath,Time)]
     private val additionalHolesBuilder = new AdditionalHolesBuilder()
@@ -505,7 +508,7 @@ object Zipper {
    *  probably unlikely in practice.  I think it could only occur if there was a very strange sequence
    *  of `flatMap` calls.
    */
-  private class AdditionalHolesBuilder extends Builder[(ZipperPath,Time), immutable.Seq[(ZipperPath,Time)]] {0
+  private class AdditionalHolesBuilder extends Builder[(ZipperPath,Time), immutable.Seq[(ZipperPath,Time)]] {
     private val hm = mutable.HashMap[ZipperPath,Time]()
    
     def += (elem: (ZipperPath,Time)) = {

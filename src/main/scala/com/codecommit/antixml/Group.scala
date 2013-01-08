@@ -310,7 +310,7 @@ class Group[+A <: Node] private[antixml] (private[antixml] val nodes: VectorCase
    * Produces a [[scala.collection.immutable.Vector]] which contains all of the
    * nodes in this `Group`.  This function is guaranteed to run in constant time.
    */
-  def toVector = nodes.toVector
+  override def toVector = nodes.toVector
   
   def toGroup = this
   
