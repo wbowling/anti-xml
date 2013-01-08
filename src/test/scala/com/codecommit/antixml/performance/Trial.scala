@@ -103,7 +103,7 @@ abstract class Trial(val id: Symbol, val description: String) { self =>
     type Result = R
     val description: String
     
-    def trialInstance: TrialInstance[R]
+    def trialInstance: TrialInstance[Result]
     
     def preload(): Value
     def run(a: Value): Result
