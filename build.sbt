@@ -10,6 +10,8 @@ scalaVersion := "2.10.0"
 
 scalacOptions += "-deprecation"
 
+scalacOptions += "-language:_"
+
 libraryDependencies ++= Seq(
     "org.scalacheck" %% "scalacheck" % "1.10.0" % "test" withSources,
     "org.specs2" %% "specs2" % "1.12.3" % "test" withSources,
