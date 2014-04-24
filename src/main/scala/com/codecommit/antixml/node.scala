@@ -1,19 +1,19 @@
 /*
  * Copyright (c) 2011, Daniel Spiewak
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
- * 
+ *
  * - Redistributions of source code must retain the above copyright notice, this
- *   list of conditions and the following disclaimer. 
+ *   list of conditions and the following disclaimer.
  * - Redistributions in binary form must reproduce the above copyright notice, this
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  * - Neither the name of "Anti-XML" nor the names of its contributors may
  *   be used to endorse or promote products derived from this software without
  *   specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -53,7 +53,7 @@ package com.codecommit.antixml
  * <li>[[com.codecommit.antixml.ProcInstr]] – A processing instruction consisting
  * of a target and some data</li>
  * <li>[[com.codecommit.antixml.Elem]] – An XML element consisting of an optional
- * prefix, a name (or identifier), a set of attributes, a set of namespace mappings 
+ * prefix, a name (or identifier), a set of attributes, a set of namespace mappings
  * in scope and a sequence of child nodes</li>
  * <li>[[com.codecommit.antixml.Text]] – A node containing a single string, representing
  * character data in the XML tree</li>
@@ -63,8 +63,8 @@ package com.codecommit.antixml
  * </ul>
  */
  sealed trait Node {
-  /** 
-   * Returns the children of this node. If the node is an [[com.codecommit.antixml.Elem]], 
+  /**
+   * Returns the children of this node. If the node is an [[com.codecommit.antixml.Elem]],
    * then this method returns the element's children.  Otherwise, it returns an empty
    * [[com.codecommit.antixml.Group]].
    */
@@ -113,7 +113,7 @@ private[antixml] object Node {
  * {{{
  * <?xml version="1.0"?>
  * }}}
- * 
+ *
  * This would result in the following node:
  *
  * {{{
@@ -133,7 +133,7 @@ case class ProcInstr(target: String, data: String) extends Node {
  * {{{
  * <span id="foo" class="bar">Lorem ipsum</span>
  * }}}
- * 
+ *
  * This would result in the following node:
  *
  * {{{
@@ -157,7 +157,7 @@ case class Elem(prefix: Option[String], name: String, attrs: Attributes = Attrib
   def canonicalize = copy(children=children.canonicalize)
 
   override def toString = {
-    val sw = new java.io.StringWriter() 
+    val sw = new java.io.StringWriter()
     val xs = XMLSerializer()
     xs.serialize(this, sw)
     sw.toString
@@ -171,7 +171,7 @@ case class Elem(prefix: Option[String], name: String, attrs: Attributes = Attrib
         writer.close()
       }
   }
-  
+
   def toGroup = Group(this)
 
   def withName(name: String) = copy(name = name)
@@ -210,11 +210,11 @@ case class Elem(prefix: Option[String], name: String, attrs: Attributes = Attrib
   def addNamespace(uri: String) = copy(namespaces = namespaces.append(uri))
 
   /**
-   * Adds the Map of prefix -> namespace to the scope. 
-   * If the prefix is the empty prefix, a new prefix is created for it. 
-   * If the namespace has been already registered, this will not re-register it. 
+   * Adds the Map of prefix -> namespace to the scope.
+   * If the prefix is the empty prefix, a new prefix is created for it.
+   * If the namespace has been already registered, this will not re-register it.
    * (It is allowed by the XML spec, but kind of pointless in practice)
-   * 
+   *
    */
   def addNamespaces(namespaces: Map[String, String]) = {
     if (namespaces.isEmpty) this
@@ -235,7 +235,7 @@ case class Elem(prefix: Option[String], name: String, attrs: Attributes = Attrib
         }
         case (pfx, uri) => binding.append(pfx, uri)
       }
-      
+
       val binding = namespaces.foldLeft(this.namespaces){case (ns, tuple) => mapit(ns, tuple)}
       if (binding == this.namespaces) this else copy(namespaces = binding)
     }
@@ -278,7 +278,8 @@ object Elem {
   def validateAttributes(attrs: Attributes, namespaces: NamespaceBinding) {
     attrs.foreach {
       case (QName(Some(prefix), name), value) =>
-        if (!namespaces.findByPrefix(prefix).isDefined)
+        // "xml:" prefix is always valid for XML, see http://www.w3.org/XML/1998/namespace
+        if (prefix != "xml" && !namespaces.findByPrefix(prefix).isDefined)
           throw new IllegalArgumentException("Attribute with name '%s' with prefix '%s' is not defined on element".format(name, prefix)
       )
       case _ =>
@@ -294,7 +295,7 @@ object Elem {
  * {{{
  * Lorem ipsum &amp; dolor sit amet
  * }}}
- * 
+ *
  * This would result in the following node:
  *
  * {{{
@@ -321,7 +322,7 @@ case class Text(text: String) extends Node {
  * {{{
  * <![CDATA[Lorem ipsum & dolor sit amet]]>
  * }}}
- * 
+ *
  * This would result in the following node:
  *
  * {{{
@@ -348,7 +349,7 @@ case class CDATA(text: String) extends Node {
  * {{{
  * &hellip;
  * }}}
- * 
+ *
  * This would result in the following node:
  *
  * {{{
