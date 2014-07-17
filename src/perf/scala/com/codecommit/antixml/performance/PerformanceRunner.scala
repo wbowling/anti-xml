@@ -73,7 +73,7 @@ class PerformanceRunner(trials: Seq[Trial]) {
       for(impl <- loadTrial.create.sizeMeasurements) {
         print("%-15s ".format(impl.description+":"))
         cleanVM()
-        println(deepsize(impl.run()))
+        println(deepsize(impl.run(impl.preload())))
       }
       println()
     }
@@ -133,17 +133,18 @@ class PerformanceRunner(trials: Seq[Trial]) {
     println("%-27s %-50s [%s]".format("["+trial.id.name+"]", trial.description, trialInstance.testDataDescription))
     System.out.flush()
     cleanVM()
-    val impls = trial.create.implementations filter { impl =>
+    //extra typing needed because of 2.10
+    val impls: Seq[trial.Implementation[_, _]] = trial.create.implementations filter { impl =>
       selector(TrialCriteria(impl.id, impl.runLevel, impl.classifiers))
     }
-    impls foreach { impl =>
+    impls.foreach { impl =>
       print(" + %-27s ".format(impl.description+":"))
       System.out.flush()
       
       val warmUpResults = InfoResults((0 until impl.warmUps) map { _ => 
-        val a = impl.preload()
+        val a: impl.Value = impl.preload() // extra typing needed because of 2.10
         val r = impl.run(a)
-        trialInstance.resultDescription(r)
+        trialInstance.resultDescription(r.asInstanceOf[trialInstance.Result]) //required because of 2.10 strangeness
       })
       if (!warmUpResults.isValid) 
         println("ERROR DURING WARMUP: "+warmUpResults)
@@ -151,10 +152,10 @@ class PerformanceRunner(trials: Seq[Trial]) {
       cleanVM()
       
       val results = (0 until impl.runs).map { _ =>
-        val a = impl.preload()      // existential types for the win!
+        val a: impl.Value = impl.preload()      // existential types for the win! extra typing needed because of 2.10
         cleanVM()
         val (r,t) = timedMs { impl.run(a) }
-        (trialInstance.resultDescription(r), t)
+        (trialInstance.resultDescription(r.asInstanceOf[trialInstance.Result]), t) //required because of 2.10 strangeness
       }
       
       val (infos,times) = results.unzip
