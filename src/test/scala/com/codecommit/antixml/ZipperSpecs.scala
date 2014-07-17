@@ -323,8 +323,8 @@ class ZipperSpecs extends Specification with ScalaCheck with XMLGenerators with 
       // find afresh without using >
       bookstore2.head.asInstanceOf[Elem].children(0).asInstanceOf[Elem].attrs mustEqual Attributes("updated" -> "yes")
       bookstore2.head.asInstanceOf[Elem].children(1).asInstanceOf[Elem].attrs mustEqual Attributes("updated" -> "yes")
-      
-      (bookstore2 \ "book" \ "title" \ *) must beLike((_:Node) match { case Text("Programming Scala") => ok }).forall
+      val titleValue : Node = (bookstore2 \ "book" \ "title" \ *).head
+      titleValue mustEqual Text("Programming Scala")
     }
     
     // my attempt at a "real world" test case"
