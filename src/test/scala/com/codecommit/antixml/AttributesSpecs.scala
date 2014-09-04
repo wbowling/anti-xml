@@ -165,5 +165,5 @@ class AttributesSpecs extends Specification with ScalaCheck with XMLGenerators {
   }
   
   val numProcessors = Runtime.getRuntime.availableProcessors
-  implicit val params: Parameters = set(workers -> numProcessors)
+  implicit val params: Parameters = set(workers = numProcessors)
 }

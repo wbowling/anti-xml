@@ -32,7 +32,7 @@ import org.specs2.mutable._
 import org.specs2.{execute, ScalaCheck}
 import org.specs2.execute.Result
 import org.specs2.matcher.{ResultMatchers, Parameters}
-import org.scalacheck.{Arbitrary, Prop, Gen, Choose}
+import org.scalacheck.{Arbitrary, Prop, Gen}
 import Prop._
 import org.specs2.matcher.ScalaCheckMatchers._
 import scala.math.Ordering
@@ -334,5 +334,5 @@ class ZipperHoleMapSpecs extends Specification with ScalaCheck with ResultMatche
   //Using a small range to ensure some overlapping prefixes
   private final val minSaneLoc = 0
   private final val maxSaneLoc = 10
-  def saneLocations: Gen[Int] = Choose.chooseInt.choose(minSaneLoc,maxSaneLoc) 
+  def saneLocations: Gen[Int] = Gen.choose(minSaneLoc,maxSaneLoc) 
 }

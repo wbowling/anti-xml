@@ -87,7 +87,7 @@ class BloomFilterSpecs extends Specification with ScalaCheck {
   }
   
   val numProcessors = Runtime.getRuntime.availableProcessors
-  implicit val params: Parameters = set(maxSize -> (numProcessors * 200), workers -> numProcessors)
+  implicit val params: Parameters = set(maxSize = (numProcessors * 200), workers = numProcessors)
   def contain(a: Any): Matcher[BloomFilter] = ((_:BloomFilter).contains(a), (_:BloomFilter).toString+" doesn't contain "+a)
   def containHash(h: BloomFilter.Hash): Matcher[BloomFilter] = ((_:BloomFilter).containsHash(h), (_:BloomFilter).toString+" doesn't contain hash "+h.hashes)
 

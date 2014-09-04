@@ -84,7 +84,7 @@ trait XMLGenerators {
     name <- genSaneString
     attrs <- genAttributes
     bindings <- genBindings
-    children <- if (depth > MaxGroupDepth) value(Group()) else (listOf(nodeGenerator(depth + 1)) map Group.fromSeq)
+    children <- if (depth > MaxGroupDepth) const(Group()) else (listOf(nodeGenerator(depth + 1)) map Group.fromSeq)
   } yield {
     val namespace = attrs.foldLeft(bindings){
       case (nb, (QName(Some(p), _), _)) => nb.findByPrefix(p).map(_ => nb).getOrElse(nb.append(p, "urn:foo:bar"))

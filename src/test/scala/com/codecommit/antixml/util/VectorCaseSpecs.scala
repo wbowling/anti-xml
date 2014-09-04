@@ -32,10 +32,10 @@ import org.specs2.mutable._
 import org.specs2.ScalaCheck
 import org.specs2.matcher.Parameters
 import org.scalacheck.{Arbitrary, Prop}
-import Prop._
-import org.specs2.matcher.ScalaCheckMatchers._
+//import Prop._
+//import org.specs2.matcher.ScalaCheckMatchers._
 
-class VectorCaseSpecs extends Specification with ScalaCheck {
+class VectorCaseSpecs extends Specification with ScalaCheck{
   import math._
   
   val vector = VectorCase[Int]()
@@ -127,7 +127,7 @@ class VectorCaseSpecs extends Specification with ScalaCheck {
         vec2(i) aka ("Index " + i + " in derivative") mustEqual vec(i) aka ("Index " + i + " in origin")
       }
       vec2.last mustEqual 42
-    }.set(maxSize -> 3000, minTestsOk -> 1000, workers -> numProcessors)
+    }(set(maxSize = 3000, minTestsOk = 1000, workers = numProcessors))
 
     "maintain both old and new versions after update" in check { (vec: VectorCase[Int], i: Int) =>
       (!vec.isEmpty && i > Int.MinValue) ==> {
@@ -144,7 +144,7 @@ class VectorCaseSpecs extends Specification with ScalaCheck {
       for (len <- (vec.length - 4) to vec.length) {
         (vec drop len toVector) mustEqual (vec.toVector drop len)
       }
-      true
+      true mustEqual true
     }
     
     "implement drop matching Vector semantics (in general case)" in check { (vec: VectorCase[Int], len: Int) =>
@@ -155,7 +155,7 @@ class VectorCaseSpecs extends Specification with ScalaCheck {
       for (len <- (vec.length - 4) to vec.length) {
         (vec dropRight len toVector) mustEqual (vec.toVector dropRight len)
       }
-      true
+      true mustEqual true
     }
     
     "implement dropRight matching Vector semantics (in general case)" in check { (vec: VectorCase[Int], len: Int) =>
@@ -239,7 +239,7 @@ class VectorCaseSpecs extends Specification with ScalaCheck {
       back
     }
     
-    "implement reverse" in check { v: VectorCase[Int] =>
+    "implement reverse" in check { functionToProp{ v: VectorCase[Int] =>
       val reversed = v.reverse
       
       var back = v.length == reversed.length
@@ -247,7 +247,7 @@ class VectorCaseSpecs extends Specification with ScalaCheck {
         back &&= reversed(i) == v(v.length - i - 1)
       }
       back
-    }
+    }}
     
     "append to reverse" in check { (v: VectorCase[Int], n: Int) =>
       val rev = v.reverse
@@ -309,7 +309,7 @@ class VectorCaseSpecs extends Specification with ScalaCheck {
       back
     }
     
-    "implement zipWithIndex" in check { vec: VectorCase[Int] =>
+    "implement zipWithIndex" in check { functionToProp{ vec: VectorCase[Int] =>
       val zip = vec.zipWithIndex
       
       var back = zip.length == vec.length
@@ -318,7 +318,7 @@ class VectorCaseSpecs extends Specification with ScalaCheck {
         back &&= (index == i && elem == vec(i))
       }
       back
-    }
+    }}
     
     "implement equals" >> {
       "1." in check { list: List[Int] => 
@@ -352,7 +352,7 @@ class VectorCaseSpecs extends Specification with ScalaCheck {
   }
   
   val numProcessors = Runtime.getRuntime.availableProcessors
-  implicit val params: Parameters = set(workers -> numProcessors)
+  implicit val params: Parameters = set(workers = numProcessors)
 }
 
   

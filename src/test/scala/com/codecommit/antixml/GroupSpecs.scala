@@ -37,7 +37,7 @@ class GroupSpecs extends Specification with ScalaCheck with XMLGenerators with U
   import XML._
   
   lazy val numProcessors = Runtime.getRuntime.availableProcessors()
-  implicit val params = set(workers -> numProcessors, maxSize -> 15)      // doesn't need to be so large
+  implicit val params = set(workers = numProcessors, maxSize = 15)      // doesn't need to be so large
 
   "shallow selection on Group" should {
     "find an immediate descendant" in {

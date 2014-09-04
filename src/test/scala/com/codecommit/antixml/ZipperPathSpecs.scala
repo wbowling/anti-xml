@@ -32,8 +32,6 @@ import org.specs2.mutable._
 import org.specs2.ScalaCheck
 import org.specs2.matcher.Parameters
 import org.scalacheck.{Arbitrary, Prop}
-import Prop._
-import org.specs2.matcher.ScalaCheckMatchers._
 
 class ZipperPathSpecs extends Specification with ScalaCheck {
   import math._
@@ -173,7 +171,7 @@ class ZipperPathSpecs extends Specification with ScalaCheck {
         zp2(i) aka ("Index " + i + " in derivative") mustEqual zp(i) aka ("Index " + i + " in origin")
       }
       zp2.last mustEqual 42
-    }.set(maxSize -> 3000, minTestsOk -> 1000, workers -> numProcessors)
+    }(set(maxSize = 3000, minTestsOk = 1000, workers = numProcessors))
 
     "maintain both old and new versions after update" in check { (zp: ZipperPath, i: Int) =>
       (!zp.isEmpty && i > Int.MinValue) ==> {
@@ -273,7 +271,7 @@ class ZipperPathSpecs extends Specification with ScalaCheck {
       back
     }
     
-    "implement reverse" in check { v: ZipperPath =>
+    "implement reverse" in check { functionToProp{ v: ZipperPath =>
       val reversed = v.reverse
       
       var back = v.length == reversed.length
@@ -281,7 +279,7 @@ class ZipperPathSpecs extends Specification with ScalaCheck {
         back &&= reversed(i) == v(v.length - i - 1)
       }
       back
-    }
+    }}
     
     "append to reverse" in check { (v: ZipperPath, n: Int) =>
       val rev = v.reverse
@@ -345,7 +343,7 @@ class ZipperPathSpecs extends Specification with ScalaCheck {
       back
     }
     
-    "implement zipWithIndex" in check { zp: ZipperPath =>
+    "implement zipWithIndex" in check { functionToProp { zp: ZipperPath =>
       val zip = zp.zipWithIndex
       
       var back = zip.length == zp.length
@@ -354,7 +352,7 @@ class ZipperPathSpecs extends Specification with ScalaCheck {
         back &&= (index == i && elem == zp(i))
       }
       back
-    }
+    }}
     
     "implement equals" >> {
       "1." in check { list: List[Int] => 
@@ -399,7 +397,7 @@ class ZipperPathSpecs extends Specification with ScalaCheck {
   }
   
   val numProcessors = Runtime.getRuntime.availableProcessors
-  implicit val params: Parameters = set(workers -> numProcessors)
+  implicit val params: Parameters = set(workers = numProcessors)
 }
 
   
