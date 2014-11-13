@@ -24,11 +24,12 @@ sealed trait NamespaceBinding {
     case PrefixedNamespaceBinding(p, _, parent) => if(p == prefix) Some(this) else parent.findByPrefix(prefix)
   }
 
-  @tailrec final def findByUri(uri: String): Option[NamespaceBinding] = this match {
-    case EmptyNamespaceBinding => None
-    case PrefixedNamespaceBinding(_, u, parent) => if (u == uri) Some(this) else parent.findByUri(uri)
-    case UnprefixedNamespaceBinding(u, parent) => if (u == uri) Some(this) else parent.findByUri(uri)
-  }
+  // If prefix is supplied, then an UnprefixedNamespaceBinding will never be returned
+  @tailrec final def findByUri(uri: String, prefix: String=""): Option[NamespaceBinding] = this match {
+      case EmptyNamespaceBinding => None
+      case PrefixedNamespaceBinding(p, u, parent) => if (u == uri && (prefix.isEmpty() || p==prefix)) Some(this) else parent.findByUri(uri, prefix)
+      case UnprefixedNamespaceBinding(u, parent) => if (prefix.isEmpty() && u == uri) Some(this) else parent.findByUri(uri, prefix)
+    }
 
   def findPrefixes(uri: String): List[String] = {
     @tailrec def find(nb: NamespaceBinding, list: List[String]): List[String] = nb match {
