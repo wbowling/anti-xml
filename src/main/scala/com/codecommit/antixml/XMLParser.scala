@@ -80,23 +80,9 @@ trait XMLParser {
 
 object XMLParser {
   private [antixml] def selectBinding(prefix: String, uri: String, scopes: NamespaceBinding): NamespaceBinding = {
-    if (prefix.isEmpty) {
-      if (!scopes.findByUri(uri).isDefined) {
-        val parent = scopes.findByPrefix("").map(_.parent).getOrElse(scopes)
-        parent.append(if (uri == null) "" else uri)
-      }
-      else {
-        scopes
-      }
-    }
-    else {
-      if (!scopes.findByUri(uri, prefix).isDefined) {
-        scopes.append(prefix, uri)
-      }
-      else {
-        scopes
-      }
+    scopes.findByPrefix(prefix) match {
+      case Some(ns) if ns.uri == Some(uri) => scopes
+      case _  => if (prefix.isEmpty) NamespaceBinding(uri, scopes) else NamespaceBinding(prefix, uri, scopes) 
     }
   }
-
 }
