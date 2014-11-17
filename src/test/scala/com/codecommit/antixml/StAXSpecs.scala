@@ -51,7 +51,7 @@ class StAXSpecs extends Specification {
     }
 
     "parse an element with default namespace prefix and child element with a re-defined default namespace" in {
-      StAXParser.fromString("<a xmlns='urn:a'><b xmlns='urn:b'/></a>") mustEqual Elem(None, "a", Attributes(), NamespaceBinding("urn:a"), Group(Elem(None, "b", Attributes(), NamespaceBinding("urn:b"), Group())))
+      StAXParser.fromString("<a xmlns='urn:a'><b xmlns='urn:b'/></a>") mustEqual Elem(None, "a", Attributes(), NamespaceBinding("urn:a"), Group(Elem(None, "b", Attributes(), NamespaceBinding("urn:b", NamespaceBinding("urn:a")), Group())))
     }
 
     "parse a simpleString and generate an Elem" in {
