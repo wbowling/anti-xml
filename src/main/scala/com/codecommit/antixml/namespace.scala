@@ -12,6 +12,8 @@ object NamespaceEntry {
   def apply(uri: String): NamespaceEntry = UnprefixedNamespaceBinding(uri)
 
   def apply(prefix: String, uri: String): NamespaceEntry = PrefixedNamespaceBinding(prefix, uri)
+  
+  def apply(prefix: Option[String], uri: String): NamespaceEntry = prefix.fold(apply(uri))(apply(_, uri))
 }
 
 sealed trait NamespaceEntry {
@@ -104,6 +106,7 @@ case class PrefixedNamespaceBinding(_prefix: String, _uri: String) extends Names
 
   def prefix = Some(_prefix)
   def uri = Some(_uri)
+  override def toString = "xmlns:"+_prefix+"=\""+_uri+"\""
 }
 
 case class UnprefixedNamespaceBinding(_uri: String) extends NamespaceEntry {
@@ -113,6 +116,7 @@ case class UnprefixedNamespaceBinding(_uri: String) extends NamespaceEntry {
 
   def uri = Some(_uri)
   def prefix = None
+  override def toString = "xmlns=\""+_uri+"\""
 }
 
 object ElemNamespaceUri {

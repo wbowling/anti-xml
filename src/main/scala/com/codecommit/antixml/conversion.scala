@@ -131,8 +131,10 @@ object XMLConvertable extends SecondPrecedenceConvertables {
 
       val children = NodeSeqConvertable(xml.NodeSeq fromSeq e.child)
 
-      val scopes = scope2stream(e.scope).toList.filter(x => x.prefix != null || x.uri != null)
-      val namespaceBindings = scopes.foldLeft(NamespaceBinding.empty)((parent, t) => if(t.prefix == null) parent.append(t.uri) else parent.append(t.prefix, t.uri))
+      val entries = scope2stream(e.scope).toList.collect {
+        case b: xml.NamespaceBinding if b.prefix != null || b.uri != null => NamespaceEntry(Option(b.prefix), Option(b.uri).getOrElse("")) 
+      }
+      val namespaceBindings = NamespaceBinding(entries)
 
       val prefix = Option(e.prefix)
 

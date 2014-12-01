@@ -133,7 +133,7 @@ class ConversionSpecs extends Specification with ScalaCheck {
       val e = x.convert
       e.prefix must beNone
       e.name mustEqual "test"
-      e.namespaces mustEqual NamespaceBinding("urn:foo", NamespaceBinding("bar" -> "urn:bar"))
+      e.namespaces mustEqual NamespaceBinding("bar", "urn:bar", NamespaceBinding("urn:foo"))
     }
 
     "convert elem attributes" in {
@@ -147,6 +147,11 @@ class ConversionSpecs extends Specification with ScalaCheck {
       e.children(0) mustEqual Text("Text1")
       e.children(1) mustEqual Elem(None, "child")
       e.children(2) mustEqual Text("Text2")
+    }
+
+    "convert elem with overriden default namespace in child element" in {
+      <ims xmlns="urn:a" xmlns:already="urn:b" xmlns:order="urn:c"><xml xmlns="urn:b"/></ims>.convert.toString mustEqual
+      "<ims xmlns=\"urn:a\" xmlns:already=\"urn:b\" xmlns:order=\"urn:c\"><xml xmlns=\"urn:b\"/></ims>"
     }
     
     "convert NodeSeq" in {
